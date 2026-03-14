@@ -30,9 +30,6 @@ struct NameCollectionView: View {
                         VStack(spacing: 2) {
                             Text("one last thing,")
                                 .font(.funnelDisplay(18, weight: .bold))
-                            Text("what's your name?")
-                                .font(.cormorantGaramond(21))
-                                .italic()
                         }
                         .foregroundColor(Color.brandPrimary.opacity(0.5))
                         .multilineTextAlignment(.center)
@@ -41,6 +38,13 @@ struct NameCollectionView: View {
                     .padding(.bottom, 44)
 
                     VStack(spacing: 10) {
+                        Text("what's your name?")
+                            .font(.cormorantGaramond(21))
+                            .italic()
+                            .foregroundStyle(Color.brandPrimary.opacity(0.6))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.bottom, 2)
+
                         TextField("Your name", text: $name)
                             .textInputAutocapitalization(.words)
                             .autocorrectionDisabled()
@@ -94,6 +98,15 @@ struct NameCollectionView: View {
                     .shadow(color: Color.brandPrimary.opacity(0.08), radius: 24, x: 0, y: 8)
                     .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
                     .padding(.horizontal, 24)
+
+                    Button {
+                        Task { try? await authService.signOut() }
+                    } label: {
+                        Text("← Sign out")
+                            .font(.dmSans(13))
+                            .foregroundStyle(Color.brandPrimary.opacity(0.45))
+                    }
+                    .padding(.top, 24)
                 }
             }
             .scrollBounceBehavior(.basedOnSize)
