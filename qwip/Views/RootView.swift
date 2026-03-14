@@ -10,6 +10,10 @@ struct RootView: View {
                 SplashView()
                     .transition(.opacity)
                     .zIndex(2)
+            } else if authService.needsDisplayName {
+                NameCollectionView()
+                    .transition(.opacity)
+                    .zIndex(1)
             } else if authService.isAuthenticated {
                 ContentView()
                     .environment(\.signOut) {
@@ -36,6 +40,7 @@ struct RootView: View {
         }
         .animation(.easeInOut(duration: 0.45), value: showSplash)
         .animation(.easeInOut(duration: 0.45), value: authService.isAuthenticated)
+        .animation(.easeInOut(duration: 0.45), value: authService.needsDisplayName)
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
                 showSplash = false

@@ -14,6 +14,14 @@ final class AuthService {
         session != nil
     }
 
+    var displayName: String? {
+        session?.user.userMetadata["name"]?.stringValue
+    }
+
+    var needsDisplayName: Bool {
+        isAuthenticated && (displayName == nil || displayName!.isEmpty)
+    }
+
     // MARK: - Init
 
     init() {
@@ -73,6 +81,12 @@ final class AuthService {
     func verifyOTP(email: String, token: String) async throws {
         try await supabase.auth.verifyOTP(email: email, token: token, type: .email)
         // session is updated automatically via authStateChanges
+    }
+
+    // MARK: - Display Name
+
+    func updateDisplayName(_ name: String) async throws {
+        try await supabase.auth.update(user: UserAttributes(data: ["name": .string(name)]))
     }
 
     // MARK: - Sign Out
