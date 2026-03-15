@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @State private var store = SpotStore()
     @State private var locationService = LocationService()
+    @State private var savedSpotService = SavedSpotService()
     @State private var selectedTab = 0
 
     var body: some View {
@@ -16,10 +17,12 @@ struct ContentView: View {
             }
             .environment(store)
             .environment(locationService)
+            .environment(savedSpotService)
 
             GlassTabBar(selectedTab: $selectedTab)
         }
         .ignoresSafeArea(edges: .bottom)
+        .task { await savedSpotService.load() }
     }
 }
 
