@@ -3,7 +3,6 @@ import CoreLocation
 
 struct SpotDetailView: View {
     let detail: SpotDetail
-    @Environment(SpotStore.self) var store
     @Environment(SavedSpotService.self) var savedSpotService
     @Environment(LocationService.self) var locationService
     @Environment(\.dismiss) var dismiss
@@ -338,6 +337,7 @@ struct SpotDetailView: View {
         guard !isSaving else { return }
         isSaving = true
         Task {
+            defer { isSaving = false }
             do {
                 if savedSpotService.isSaved(detail.id) {
                     try await savedSpotService.unsave(spotId: detail.id)
@@ -347,7 +347,6 @@ struct SpotDetailView: View {
             } catch {
                 saveError = error.localizedDescription
             }
-            isSaving = false
         }
     }
 
