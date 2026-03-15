@@ -3,7 +3,7 @@ import SwiftUI
 struct SavedSpotsView: View {
     @Environment(SavedSpotService.self) var savedSpotService
     @State private var detailSpot: SpotDetail? = nil
-    @State private var isFetchingDetail = false
+    @State private var fetchingDetailID: String? = nil
     @State private var fetchDetailError: String? = nil
     @State private var unsaveError: String? = nil
 
@@ -45,7 +45,7 @@ struct SavedSpotsView: View {
                 } else {
                     LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(savedSpotService.savedEntries) { entry in
-                            SavedSpotCard(spot: entry.spot, isLoading: isFetchingDetail)
+                            SavedSpotCard(spot: entry.spot, isLoading: fetchingDetailID == entry.spot.id)
                                 .onTapGesture { fetchDetail(for: entry.spot) }
                                 .contextMenu {
                                     Button(role: .destructive) {
@@ -94,9 +94,9 @@ struct SavedSpotsView: View {
     }
 
     private func fetchDetail(for pin: SpotPin) {
-        guard !isFetchingDetail else { return }
+        guard fetchingDetailID == nil else { return }
         Task {
-            isFetchingDetail = true
+            fetchingDetailID = pin.id
             do {
                 detailSpot = try await SpotAPIClient.shared.fetchSpotDetail(id: pin.id)
             } catch SpotAPIError.notFound {
@@ -104,7 +104,7 @@ struct SavedSpotsView: View {
             } catch {
                 fetchDetailError = error.localizedDescription
             }
-            isFetchingDetail = false
+            fetchingDetailID = nil
         }
     }
 
