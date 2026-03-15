@@ -22,6 +22,7 @@ final class SavedSpotService {
     /// Fetches all saved spots. Clears any previous error immediately so
     /// the error banner dismisses as soon as the user taps Retry.
     func load() async {
+        guard !isLoading else { return }
         isLoading = true
         loadError = nil
         do {
@@ -37,6 +38,7 @@ final class SavedSpotService {
     /// Inserts a stub entry immediately, then replaces it with the real
     /// server response. Removes the stub and rethrows on failure.
     func save(spot: SpotPin) async throws {
+        guard !isSaved(spot.id) else { return }
         let stub = SavedSpotEntry(spot: spot, savedAt: .now, collectionIds: [])
         savedEntries.insert(stub, at: 0)
         do {
