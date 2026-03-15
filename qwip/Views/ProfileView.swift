@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ProfileView: View {
     @Environment(SpotStore.self) var store
+    @Environment(SavedSpotService.self) var savedSpotService
     @Environment(AuthService.self) var authService
     @Environment(\.signOut) var signOut
     @State private var showingDeleteConfirmation = false
@@ -19,7 +20,7 @@ struct ProfileView: View {
 
                     // MARK: Stats
                     HStack(spacing: 12) {
-                        BigStatCard(value: "\(store.savedSpots.count)", label: "Saved Spots", icon: "heart.fill", iconColor: Color(hex: "e74c3c"))
+                        BigStatCard(value: "\(savedSpotService.savedEntries.count)", label: "Saved Spots", icon: "heart.fill", iconColor: Color(hex: "e74c3c"))
                         BigStatCard(value: "\(store.spots.count)", label: "Spots Nearby", icon: "mappin.circle.fill", iconColor: Color.brandPrimary)
                     }
 
