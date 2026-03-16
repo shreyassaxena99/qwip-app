@@ -4,6 +4,7 @@ struct ContentView: View {
     @State private var store = SpotStore()
     @State private var locationService = LocationService()
     @State private var savedSpotService = SavedSpotService()
+    @State private var collectionService = CollectionService()
     @State private var selectedTab = 0
 
     var body: some View {
@@ -11,18 +12,23 @@ struct ContentView: View {
             Group {
                 switch selectedTab {
                 case 0: MapView()
-                case 1: SavedSpotsView()
+                case 1: CollectionsView()
                 default: ProfileView()
                 }
             }
             .environment(store)
             .environment(locationService)
             .environment(savedSpotService)
+            .environment(collectionService)
 
             GlassTabBar(selectedTab: $selectedTab)
         }
         .ignoresSafeArea(edges: .bottom)
-        .task { await savedSpotService.load() }
+        .task {
+            async let s: () = savedSpotService.load()
+            async let c: () = collectionService.load()
+            _ = await (s, c)
+        }
     }
 }
 
