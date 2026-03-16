@@ -278,19 +278,15 @@ struct SpotDetailView: View {
     // MARK: - Actions Row
 
     private var actionsRow: some View {
-        let saved = savedSpotService.isSaved(detail.id)
         return HStack(spacing: 12) {
 
-            // Save
-            Button {
-                toggleSave()
-            } label: {
+            // Share
+            ShareLink(item: shareText) {
                 VStack(spacing: 7) {
-                    Image(systemName: saved ? "heart.fill" : "heart")
+                    Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(saved ? Color(hex: "e74c3c") : Color.brandPrimary)
-                        .contentTransition(.symbolEffect(.replace))
-                    Text(saved ? "Saved" : "Save")
+                        .foregroundStyle(Color.brandPrimary)
+                    Text("Share")
                         .font(.dmSans(12, weight: .bold))
                         .foregroundStyle(Color.brandPrimary)
                 }
@@ -298,9 +294,9 @@ struct SpotDetailView: View {
                 .padding(.vertical, 18)
                 .background(glassBackground(cornerRadius: 16))
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(isSaving)
 
             // Directions
             Button {
@@ -348,6 +344,15 @@ struct SpotDetailView: View {
                 saveError = error.localizedDescription
             }
         }
+    }
+
+    private var shareText: String {
+        var lines = [detail.name]
+        if let address = detail.displayAddress { lines.append(address) }
+        let lat = String(format: "%.4f", detail.latitude)
+        let lon = String(format: "%.4f", detail.longitude)
+        lines.append("https://maps.google.com/?q=\(lat),\(lon)")
+        return lines.joined(separator: "\n")
     }
 
     private func sectionHeader(_ title: String) -> some View {
