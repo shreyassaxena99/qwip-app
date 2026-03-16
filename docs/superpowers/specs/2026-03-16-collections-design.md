@@ -24,7 +24,7 @@ Modified files:
 - `qwip/Services/SavedSpotAPIClient.swift` — `saveSpot(spotId:collectionIds:)` adds `collection_ids` to request body; `fetchSavedSpots(collectionId:)` adds optional query param
 - `qwip/Views/SpotDetailView.swift` — heart tap opens `SaveToCollectionSheet` instead of toggling directly
 - `qwip/Views/ContentView.swift` — inject `CollectionService`; load both services on startup
-- `qwip/Views/SavedSpotsView.swift` — replaced by `CollectionsView` in the tab (file may be deleted or repurposed as `CollectionDetailView`)
+- `qwip/Views/SavedSpotsView.swift` — deleted; replaced entirely by `CollectionsView` and `CollectionDetailView`
 
 ---
 
@@ -116,6 +116,8 @@ func save(spot: SpotPin, collectionIds: [String] = []) async throws
 
 Passes `collectionIds` through to `SavedSpotAPIClient.saveSpot(spotId:collectionIds:)`. After the server responds, updates the stub entry's `collectionIds` with the returned `SavedSpotResponse.collectionIds`.
 
+**`updateCollectionIds(spotId:collectionIds:)`** — replaces the matching entry in `savedEntries` with a new `SavedSpotEntry` with the updated `collectionIds`. Since `SavedSpotEntry` uses `let` properties, mutation requires constructing a replacement and swapping it in the array by index. Called by `SaveToCollectionSheet` after diffing collection changes for an already-saved spot.
+
 ### No other changes — `isSaved(_:)`, `unsave(spotId:)`, `load()` unchanged.
 
 ---
@@ -194,8 +196,7 @@ On appear:
 - Diff `selectedIds` vs original `collectionIds`
 - For each added ID: `collectionService.addSpot(spotId:toCollection:)`
 - For each removed ID: `collectionService.removeSpot(spotId:fromCollection:)`
-- If `favouritesTicked` toggled off and all real collections unticked → no-op (spot stays saved)
-- Update `savedEntries` entry's `collectionIds` with new set
+- Call `savedSpotService.updateCollectionIds(spotId: spot.id, collectionIds: Array(selectedIds))` — this replaces the entry in `savedEntries` with a new struct carrying the updated `collectionIds`. If `selectedIds` is empty (user removed all real collections, whether `favouritesTicked` is on or off), the spot correctly returns to "Favourite Spots" (collectionIds empty).
 - Dismiss
 
 Errors surface via `error` state → `.alert` on the sheet.
