@@ -4,6 +4,18 @@ import Foundation
 
 struct qwipTests {
 
+    // MARK: - Shared helpers
+
+    private func makeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        decoder.dateDecodingStrategy = .formatted(formatter)
+        return decoder
+    }
+
     // MARK: - Collection decoding
 
     @Test func collectionDecodesFromJSON() throws {
@@ -18,18 +30,17 @@ struct qwipTests {
         }
         """.data(using: .utf8)!
 
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
-        decoder.dateDecodingStrategy = .formatted(formatter)
-
-        let collection = try decoder.decode(Collection.self, from: json)
+        let collection = try makeDecoder().decode(Collection.self, from: json)
         #expect(collection.id == "abc-123")
         #expect(collection.name == "Morning Cafes")
         #expect(collection.spotCount == 3)
         #expect(collection.isShareable == false)
+        // Verify the date format is correct
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
+        let expected = formatter.date(from: "2026-03-16T09:00:00.000+0000")!
+        #expect(collection.createdAt == expected)
     }
 
     @Test func collectionsResponseDecodesFromJSON() throws {
@@ -49,14 +60,7 @@ struct qwipTests {
         """.data(using: .utf8)!
 
         struct CollectionsResponse: Decodable { let collections: [Collection] }
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
-        decoder.dateDecodingStrategy = .formatted(formatter)
-
-        let response = try decoder.decode(CollectionsResponse.self, from: json)
+        let response = try makeDecoder().decode(CollectionsResponse.self, from: json)
         #expect(response.collections.count == 1)
         #expect(response.collections[0].name == "Morning Cafes")
     }
