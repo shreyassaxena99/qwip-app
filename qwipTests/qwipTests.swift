@@ -6,13 +6,17 @@ struct qwipTests {
 
     // MARK: - Shared helpers
 
-    private func makeDecoder() -> JSONDecoder {
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
+    private func makeFormatter() -> DateFormatter {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
-        decoder.dateDecodingStrategy = .formatted(formatter)
+        return formatter
+    }
+
+    private func makeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .formatted(makeFormatter())
         return decoder
     }
 
@@ -36,10 +40,7 @@ struct qwipTests {
         #expect(collection.spotCount == 3)
         #expect(collection.isShareable == false)
         // Verify the date format is correct
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
-        let expected = formatter.date(from: "2026-03-16T09:00:00.000+0000")!
+        let expected = makeFormatter().date(from: "2026-03-16T09:00:00.000+0000")!
         #expect(collection.createdAt == expected)
     }
 
