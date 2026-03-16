@@ -7,8 +7,7 @@ struct SpotDetailView: View {
     @Environment(LocationService.self) var locationService
     @Environment(\.dismiss) var dismiss
     @State private var currentPhoto = 0
-    @State private var isSaving = false
-    @State private var saveError: String? = nil
+    @State private var showingSaveSheet = false
 
     var body: some View {
         NavigationStack {
@@ -44,7 +43,7 @@ struct SpotDetailView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        toggleSave()
+                        showingSaveSheet = true
                     } label: {
                         ZStack {
                             Circle()
@@ -57,16 +56,10 @@ struct SpotDetailView: View {
                                 .contentTransition(.symbolEffect(.replace))
                         }
                     }
-                    .disabled(isSaving)
                 }
             }
-            .alert("Couldn't update saved spot", isPresented: Binding(
-                get: { saveError != nil },
-                set: { if !$0 { saveError = nil } }
-            )) {
-                Button("OK") { saveError = nil }
-            } message: {
-                Text(saveError ?? "")
+            .sheet(isPresented: $showingSaveSheet) {
+                SaveToCollectionSheet(spot: detail.asSpotPin)
             }
         }
     }
@@ -328,23 +321,6 @@ struct SpotDetailView: View {
     }
 
     // MARK: - Helpers
-
-    private func toggleSave() {
-        guard !isSaving else { return }
-        isSaving = true
-        Task {
-            defer { isSaving = false }
-            do {
-                if savedSpotService.isSaved(detail.id) {
-                    try await savedSpotService.unsave(spotId: detail.id)
-                } else {
-                    try await savedSpotService.save(spot: detail.asSpotPin)
-                }
-            } catch {
-                saveError = error.localizedDescription
-            }
-        }
-    }
 
     private var shareText: String {
         var lines = [detail.name]
