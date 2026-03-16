@@ -37,12 +37,12 @@ final class SavedSpotService {
 
     /// Inserts a stub entry immediately, then replaces it with the real
     /// server response. Removes the stub and rethrows on failure.
-    func save(spot: SpotPin) async throws {
+    func save(spot: SpotPin, collectionIds: [String] = []) async throws {
         guard !isSaved(spot.id) else { return }
-        let stub = SavedSpotEntry(spot: spot, savedAt: .now, collectionIds: [])
+        let stub = SavedSpotEntry(spot: spot, savedAt: .now, collectionIds: collectionIds)
         savedEntries.insert(stub, at: 0)
         do {
-            let real = try await SavedSpotAPIClient.shared.saveSpot(spotId: spot.id)
+            let real = try await SavedSpotAPIClient.shared.saveSpot(spotId: spot.id, collectionIds: collectionIds)
             if let index = savedEntries.firstIndex(where: { $0.id == stub.id }) {
                 savedEntries[index] = real
             }
@@ -50,6 +50,18 @@ final class SavedSpotService {
             savedEntries.removeAll { $0.id == stub.id }
             throw error
         }
+    }
+
+    // MARK: - Update collection membership (synchronous, no network call)
+
+    /// Replaces the collectionIds on an existing entry in-place.
+    /// Called by SaveToCollectionSheet after diffing add/remove operations.
+    /// Since SavedSpotEntry uses let properties, mutation requires constructing
+    /// a new struct and swapping it at the original index.
+    func updateCollectionIds(spotId: String, collectionIds: [String]) {
+        guard let index = savedEntries.firstIndex(where: { $0.id == spotId }) else { return }
+        let old = savedEntries[index]
+        savedEntries[index] = SavedSpotEntry(spot: old.spot, savedAt: old.savedAt, collectionIds: collectionIds)
     }
 
     // MARK: - Unsave (optimistic)

@@ -20,11 +20,18 @@ enum SavedSpotAPIError: LocalizedError {
     }
 }
 
+// MARK: - Response wrappers
+
+private struct SavedSpotsResponse: Decodable {
+    let spots: [SavedSpotEntry]
+}
+
 // MARK: - Request body
 
 private struct SaveSpotBody: Encodable {
-    // Encoded to snake_case ("spot_id") by the encoder's .convertToSnakeCase strategy
+    // Encoded to snake_case ("spot_id", "collection_ids") by the encoder's .convertToSnakeCase strategy
     let spotId: String
+    let collectionIds: [String]
 }
 
 // MARK: - Client
@@ -72,24 +79,32 @@ struct SavedSpotAPIClient {
     // MARK: - Endpoints
 
     /// GET /me/saved-spots — returns all saved spots for the current user, newest first.
-    func fetchSavedSpots() async throws -> [SavedSpotEntry] {
-        let url = baseURL.appendingPathComponent("me/saved-spots")
+    /// Pass `collectionId` to filter to a specific collection.
+    func fetchSavedSpots(collectionId: String? = nil) async throws -> [SavedSpotEntry] {
+        var url = baseURL.appendingPathComponent("me/saved-spots")
+        if let collectionId {
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+            components.queryItems = [URLQueryItem(name: "collection_id", value: collectionId)]
+            url = components.url ?? url
+        }
         let req = try authedRequest(url: url)
         let (data, response) = try await URLSession.shared.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200...299).contains(status) else { throw SavedSpotAPIError.serverError(status) }
         do {
-            return try decoder.decode([SavedSpotEntry].self, from: data)
+            return try decoder.decode(SavedSpotsResponse.self, from: data).spots
         } catch {
+            print("🔴 [SavedSpotAPIClient] Raw response:\n\(String(data: data, encoding: .utf8) ?? "<non-utf8>")")
+            print("🔴 [SavedSpotAPIClient] Decode error: \(error)")
             throw SavedSpotAPIError.decodingError(error)
         }
     }
 
     /// POST /me/saved-spots — saves a spot and returns the created entry.
-    func saveSpot(spotId: String) async throws -> SavedSpotEntry {
+    func saveSpot(spotId: String, collectionIds: [String] = []) async throws -> SavedSpotEntry {
         let url = baseURL.appendingPathComponent("me/saved-spots")
         var req = try authedRequest(url: url, method: "POST")
-        req.httpBody = try encoder.encode(SaveSpotBody(spotId: spotId))
+        req.httpBody = try encoder.encode(SaveSpotBody(spotId: spotId, collectionIds: collectionIds))
         let (data, response) = try await URLSession.shared.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200...299).contains(status) else { throw SavedSpotAPIError.serverError(status) }

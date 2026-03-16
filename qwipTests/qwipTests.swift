@@ -66,3 +66,14 @@ struct qwipTests {
         #expect(response.collections[0].name == "Morning Cafes")
     }
 }
+
+@MainActor
+struct SavedSpotServiceTests {
+
+    @Test func updateCollectionIdsNoopsOnMissingEntry() {
+        let service = SavedSpotService()
+        // Guard path: calling on empty service should not crash and leave entries empty
+        service.updateCollectionIds(spotId: "spot-1", collectionIds: ["col-1"])
+        #expect(service.savedEntries.isEmpty)
+    }
+}
