@@ -12,7 +12,7 @@ Replace the Save button in `SpotDetailView`'s actions row with a Share button. S
 
 ## Actions Row Change
 
-The `actionsRow` currently has two buttons: Save (left, glass style) and Directions (right, filled green). The Save button is replaced with a `ShareLink` styled identically to the old Save button (glass background, same padding, same font).
+The `actionsRow` currently has two buttons: Save (left, glass style) and Directions (right, filled green). The Save button is replaced with a `ShareLink` styled identically to the old Save button (glass background, same padding, same font). Directions is unchanged.
 
 ```
 [ Share ]  [ Directions ]
@@ -20,30 +20,39 @@ The `actionsRow` currently has two buttons: Save (left, glass style) and Directi
 
 ## Share Content
 
-A computed property `shareText: String` on `SpotDetailView` builds the payload:
+A computed property `shareText: String` on `SpotDetailView` builds the payload. Lines are joined with `\n`; if `displayAddress` is nil the address line is omitted entirely with no extra blank line:
 
 ```
 <spot name>
-<address>           ← omitted if displayAddress is nil
-https://maps.google.com/?q=<latitude>,<longitude>
+<address if present>
+https://maps.google.com/?q=<lat>,<lon>
 ```
 
-Example:
+- **Address line:** `detail.displayAddress` — defined on `SpotDetail` in `Spot.swift` as `formattedAddress ?? shortAddress`. Both fields are `String?` (decoded with `decodeIfPresent`), so `displayAddress` can legitimately be nil. May be a full street address (e.g. `"1 Endell St, London WC2H 9HA"`) — that is intentional.
+- **Coordinates:** 4 decimal places via `String(format: "%.4f", ...)`, e.g. `https://maps.google.com/?q=51.5136,-0.1340`. Spots with zero coordinates (e.g. bad data) will produce `?q=0.0000,0.0000` — acceptable; no special-casing required.
+
+Example (address present):
 ```
 Workshop Coffee
-Soho, London
+1 Endell St, London WC2H 9HA
 https://maps.google.com/?q=51.5136,-0.1340
 ```
 
-The Google Maps URL uses `detail.latitude` and `detail.longitude`.
+Example (no address):
+```
+Workshop Coffee
+https://maps.google.com/?q=51.5136,-0.1340
+```
 
 ## Share Button Appearance
 
-Matches the existing Save button style:
-- Icon: `square.and.arrow.up` (SF Symbols), size 22, semibold
-- Label: "Share", dmSans 12 bold
-- Background: `glassBackground(cornerRadius: 16)`
-- No disabled state needed (share is always available)
+Mirrors the existing Save button layout exactly — same `VStack(spacing: 7)`, `.frame(maxWidth: .infinity)`, `.padding(.vertical, 18)`, placed inside the `ShareLink`'s `label:` closure. Add `.contentShape(Rectangle())` to ensure the full card area is tappable (not just the icon/text):
+
+- Icon: `square.and.arrow.up`, size 22, semibold, `Color.brandPrimary`
+- Label text: "Share", dmSans 12 bold, `Color.brandPrimary`
+- Background: `glassBackground(cornerRadius: 16)` — a free function in `SpotCard.swift`, already imported and used throughout `SpotDetailView`
+- `.clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))`
+- No `.disabled` modifier — Share remains tappable even while a save/unsave network call is in flight (deliberate; the existing Save button uses `.disabled(isSaving)` but Share has no async work of its own)
 
 ## Toolbar
 
