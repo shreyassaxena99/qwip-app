@@ -278,7 +278,7 @@ struct SpotDetailView: View {
     // MARK: - Actions Row
 
     private var actionsRow: some View {
-        return HStack(spacing: 12) {
+        HStack(spacing: 12) {
 
             // Share
             ShareLink(item: shareText) {
