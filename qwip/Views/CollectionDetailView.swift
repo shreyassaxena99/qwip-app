@@ -96,6 +96,12 @@ struct CollectionDetailView: View {
                                                 try await collectionService.removeSpot(
                                                     spotId: entry.spot.id, fromCollection: c.id)
                                                 collectionEntries.removeAll { $0.id == entry.id }
+                                                // Sync the collectionIds on the savedSpotService entry so
+                                                // favouriteCount in CollectionsView updates immediately
+                                                let currentIds = savedSpotService.savedEntries
+                                                    .first(where: { $0.id == entry.spot.id })?.collectionIds ?? []
+                                                let updatedIds = currentIds.filter { $0 != c.id }
+                                                savedSpotService.updateCollectionIds(spotId: entry.spot.id, collectionIds: updatedIds)
                                             } catch {
                                                 removeError = error.localizedDescription
                                             }
