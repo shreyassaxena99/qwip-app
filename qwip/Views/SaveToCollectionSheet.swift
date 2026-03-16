@@ -257,11 +257,12 @@ struct SaveToCollectionSheet: View {
     }
 
     private func confirm() {
+        let wasAlreadySaved = isSaved
         isSaving = true
         Task {
             defer { isSaving = false }
             do {
-                if isSaved {
+                if wasAlreadySaved {
                     let original = Set(originalCollectionIds)
                     let added = selectedIds.subtracting(original)
                     let removed = original.subtracting(selectedIds)
