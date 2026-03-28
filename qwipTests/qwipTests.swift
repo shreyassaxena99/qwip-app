@@ -27,6 +27,7 @@ struct qwipTests {
         {
             "id": "abc-123",
             "name": "Morning Cafes",
+            "description": null,
             "is_shareable": false,
             "spot_count": 3,
             "created_at": "2026-03-16T09:00:00.000+0000",
@@ -39,9 +40,42 @@ struct qwipTests {
         #expect(collection.name == "Morning Cafes")
         #expect(collection.spotCount == 3)
         #expect(collection.isShareable == false)
+        #expect(collection.collectionDescription == nil)
         // Verify the date format is correct
         let expected = makeFormatter().date(from: "2026-03-16T09:00:00.000+0000")!
         #expect(collection.createdAt == expected)
+    }
+
+    @Test func collectionDecodesNullDescription() throws {
+        let json = """
+        {
+            "id": "abc-123",
+            "name": "Morning Cafes",
+            "description": null,
+            "is_shareable": false,
+            "spot_count": 3,
+            "created_at": "2026-03-16T09:00:00.000+0000",
+            "updated_at": "2026-03-16T09:00:00.000+0000"
+        }
+        """.data(using: .utf8)!
+        let collection = try makeDecoder().decode(Collection.self, from: json)
+        #expect(collection.collectionDescription == nil)
+    }
+
+    @Test func collectionDecodesDescription() throws {
+        let json = """
+        {
+            "id": "abc-123",
+            "name": "Morning Cafes",
+            "description": "Great spots for early birds",
+            "is_shareable": false,
+            "spot_count": 3,
+            "created_at": "2026-03-16T09:00:00.000+0000",
+            "updated_at": "2026-03-16T09:00:00.000+0000"
+        }
+        """.data(using: .utf8)!
+        let collection = try makeDecoder().decode(Collection.self, from: json)
+        #expect(collection.collectionDescription == "Great spots for early birds")
     }
 
     @Test func collectionsResponseDecodesFromJSON() throws {
@@ -68,11 +102,11 @@ struct qwipTests {
 
     @Test func collectionIsHashable() {
         let a = Collection(
-            id: "abc", name: "Test", isShareable: false, spotCount: 1,
+            id: "abc", name: "Test", collectionDescription: nil, isShareable: false, spotCount: 1,
             createdAt: Date(), updatedAt: Date()
         )
         let b = Collection(
-            id: "abc", name: "Test", isShareable: false, spotCount: 1,
+            id: "abc", name: "Test", collectionDescription: nil, isShareable: false, spotCount: 1,
             createdAt: a.createdAt, updatedAt: a.updatedAt
         )
         var set = Set<Collection>()
