@@ -65,6 +65,21 @@ struct qwipTests {
         #expect(response.collections.count == 1)
         #expect(response.collections[0].name == "Morning Cafes")
     }
+
+    @Test func collectionIsHashable() {
+        let a = Collection(
+            id: "abc", name: "Test", isShareable: false, spotCount: 1,
+            createdAt: Date(), updatedAt: Date()
+        )
+        let b = Collection(
+            id: "abc", name: "Test", isShareable: false, spotCount: 1,
+            createdAt: a.createdAt, updatedAt: a.updatedAt
+        )
+        var set = Set<Collection>()
+        set.insert(a)
+        set.insert(b)
+        #expect(set.count == 1)
+    }
 }
 
 @MainActor
