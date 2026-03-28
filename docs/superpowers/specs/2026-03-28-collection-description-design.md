@@ -15,7 +15,7 @@ The backend has added a nullable `description: String?` to all collection respon
 
 | File | Change |
 |------|--------|
-| `qwip/Models/Collection.swift` | Add `var collectionDescription: String?` with `CodingKeys` mapping to `"description"` |
+| `qwip/Models/Collection.swift` | Already done — `collectionDescription: String?` with `CodingKeys` mapping to `"description"` |
 | `qwip/Services/CollectionAPIClient.swift` | Add `description` to request bodies and function signatures |
 | `qwip/Services/CollectionService.swift` | Add `collectionDescription` to `create`/`update` signatures; preserve it in all stub construction and `incrementSpotCount` |
 | `qwip/Views/CollectionsView.swift` | Add description `TextField` to `CollectionFormSheet`; update `onSave` callback and callers; expand sheet detent |
@@ -105,16 +105,19 @@ New `Section` added between name and shareable sections:
 
 ```swift
 Section {
-    TextField("Description (optional)", text: $descriptionText)
+    TextField("Description (optional)", text: $descriptionText, axis: .vertical)
+        .lineLimit(1...3)
         .font(.dmSans(15))
         .foregroundStyle(Color.brandPrimary)
-        .submitLabel(.next)
+        .onChange(of: descriptionText) { _, new in
+            if new.count > 500 { descriptionText = String(new.prefix(500)) }
+        }
 }
 ```
 
 On save, empty string maps to `nil`:
 ```swift
-let desc = descriptionText.trimmingCharacters(in: .whitespaces)
+let desc = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
 onSave(trimmedName, desc.isEmpty ? nil : desc, isShareable)
 ```
 
@@ -152,4 +155,4 @@ Not shown on `.favourites`, loading, error, or empty states.
 
 - **Null/absent description from server:** decodes as `nil`, subtitle section not shown
 - **Empty string input:** trimmed to `nil` before sending — never sends `""` to the API
-- **Long description:** wraps naturally in detail view; no client-side character limit (backend enforces 500)
+- **Long description:** wraps naturally in detail view; client-side `.onChange` cap at 500 chars matches backend limit
