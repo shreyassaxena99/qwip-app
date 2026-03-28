@@ -70,6 +70,7 @@ struct CollectionDetailView: View {
                     }
                     .frame(maxWidth: .infinity)
                 }
+                .refreshable { await loadEntries() }
             } else if displayEntries.isEmpty {
                 ScrollView { emptyState }
             } else {

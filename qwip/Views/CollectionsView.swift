@@ -269,6 +269,12 @@ struct CollectionFormSheet: View {
                         .onChange(of: descriptionText) { _, new in
                             if new.count > 500 { descriptionText = String(new.prefix(500)) }
                         }
+                    if !descriptionText.isEmpty {
+                        Text("\(descriptionText.count) / 500")
+                            .font(.dmSans(11))
+                            .foregroundStyle(Color.brandPrimary.opacity(0.35))
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
                 }
                 Section {
                     Toggle(isOn: $isShareable) {
