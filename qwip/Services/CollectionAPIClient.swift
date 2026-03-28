@@ -19,8 +19,16 @@ enum CollectionAPIError: LocalizedError {
 
 // MARK: - Request bodies
 
-private struct CreateCollectionBody: Encodable { let name: String }
-private struct RenameCollectionBody: Encodable { let name: String }
+private struct CreateCollectionBody: Encodable {
+    let name: String
+    let description: String?
+    let isShareable: Bool
+}
+private struct UpdateCollectionBody: Encodable {
+    let name: String
+    let description: String?
+    let isShareable: Bool
+}
 private struct AddSpotToCollectionBody: Encodable { let spotId: String }
 
 // MARK: - Response wrappers
@@ -84,10 +92,10 @@ struct CollectionAPIClient {
     }
 
     /// POST /me/collections
-    func createCollection(name: String) async throws -> Collection {
+    func createCollection(name: String, description: String?, isShareable: Bool) async throws -> Collection {
         let url = baseURL.appendingPathComponent("me/collections")
         var req = try authedRequest(url: url, method: "POST")
-        req.httpBody = try encoder.encode(CreateCollectionBody(name: name))
+        req.httpBody = try encoder.encode(CreateCollectionBody(name: name, description: description, isShareable: isShareable))
         let (data, response) = try await URLSession.shared.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200...299).contains(status) else { throw CollectionAPIError.serverError(status) }
@@ -99,10 +107,10 @@ struct CollectionAPIClient {
     }
 
     /// PATCH /me/collections/{id}
-    func renameCollection(id: String, name: String) async throws -> Collection {
+    func updateCollection(id: String, name: String, description: String?, isShareable: Bool) async throws -> Collection {
         let url = baseURL.appendingPathComponent("me/collections/\(id)")
         var req = try authedRequest(url: url, method: "PATCH")
-        req.httpBody = try encoder.encode(RenameCollectionBody(name: name))
+        req.httpBody = try encoder.encode(UpdateCollectionBody(name: name, description: description, isShareable: isShareable))
         let (data, response) = try await URLSession.shared.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200...299).contains(status) else { throw CollectionAPIError.serverError(status) }
