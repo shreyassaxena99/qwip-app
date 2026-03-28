@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var savedSpotService = SavedSpotService()
     @State private var collectionService = CollectionService()
     @State private var selectedTab = 0
+    @Environment(AppRouter.self) var appRouter
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -28,6 +29,13 @@ struct ContentView: View {
             async let s: () = savedSpotService.load()
             async let c: () = collectionService.load()
             _ = await (s, c)
+        }
+        .onChange(of: appRouter.pendingCollectionId) { _, id in
+            if id != nil {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
+                    selectedTab = 1
+                }
+            }
         }
     }
 }
