@@ -108,7 +108,7 @@ struct CollectionsView: View {
                     initialShareable: target.isShareable
                 ) { name, isShareable in
                     Task {
-                        do { try await collectionService.update(id: target.id, name: name, isShareable: isShareable) }
+                        do { try await collectionService.update(id: target.id, name: name, collectionDescription: nil, isShareable: isShareable) }
                         catch { actionError = error.localizedDescription }
                     }
                 }
