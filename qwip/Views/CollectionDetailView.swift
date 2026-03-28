@@ -30,8 +30,6 @@ struct CollectionDetailView: View {
     @State private var fetchDetailError: String? = nil
     @State private var removeError: String? = nil
 
-    private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
-
     // Reactive for .favourites; local state for .collection
     private var displayEntries: [SavedSpotEntry] {
         switch source {
@@ -43,85 +41,87 @@ struct CollectionDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
+        Group {
             if isLoading && displayEntries.isEmpty {
-                VStack {
-                    Spacer(minLength: 120)
-                    ProgressView().scaleEffect(1.2).tint(Color.brandPrimary)
-                    Spacer()
+                ScrollView {
+                    VStack {
+                        Spacer(minLength: 120)
+                        ProgressView().scaleEffect(1.2).tint(Color.brandPrimary)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity)
             } else if let error = loadError {
-                VStack(spacing: 16) {
-                    Spacer(minLength: 120)
-                    Image(systemName: "wifi.exclamationmark")
-                        .font(.system(size: 36, weight: .light))
-                        .foregroundStyle(Color.brandPrimary.opacity(0.4))
-                    Text(error)
-                        .font(.dmSans(14))
-                        .foregroundStyle(Color.brandPrimary.opacity(0.55))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                    Button("Try Again") { Task { await loadEntries() } }
-                        .font(.dmSans(14, weight: .bold))
-                        .foregroundStyle(Color.brandPrimary)
-                    Spacer()
+                ScrollView {
+                    VStack(spacing: 16) {
+                        Spacer(minLength: 120)
+                        Image(systemName: "wifi.exclamationmark")
+                            .font(.system(size: 36, weight: .light))
+                            .foregroundStyle(Color.brandPrimary.opacity(0.4))
+                        Text(error)
+                            .font(.dmSans(14))
+                            .foregroundStyle(Color.brandPrimary.opacity(0.55))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                        Button("Try Again") { Task { await loadEntries() } }
+                            .font(.dmSans(14, weight: .bold))
+                            .foregroundStyle(Color.brandPrimary)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity)
             } else if displayEntries.isEmpty {
-                emptyState
+                ScrollView { emptyState }
             } else {
-                LazyVGrid(columns: columns, spacing: 12) {
+                List {
+                    if case .collection(let c) = source,
+                       let desc = c.collectionDescription, !desc.isEmpty {
+                        Section {
+                            Text(desc)
+                                .font(.dmSans(14))
+                                .foregroundStyle(Color.brandPrimary.opacity(0.55))
+                                .padding(.vertical, 4)
+                                .listRowBackground(Color.brandSecondary)
+                                .listRowSeparator(.hidden)
+                        }
+                    }
                     ForEach(displayEntries) { entry in
-                        SavedSpotCard(spot: entry.spot, isLoading: fetchingDetailID == entry.spot.id)
+                        SpotRow(spot: entry.spot)
+                            .padding(.vertical, 10)
+                            .contentShape(Rectangle())
                             .onTapGesture { fetchDetail(for: entry.spot) }
-                            .contextMenu {
-                                switch source {
-                                case .favourites:
-                                    Button(role: .destructive) {
-                                        Task {
-                                            do {
-                                                try await savedSpotService.unsave(spotId: entry.spot.id)
-                                            } catch {
-                                                removeError = error.localizedDescription
-                                            }
-                                        }
-                                    } label: {
-                                        Label("Remove", systemImage: "heart.slash")
-                                    }
-                                case .collection(let c):
-                                    Button(role: .destructive) {
-                                        Task {
-                                            do {
-                                                try await collectionService.removeSpot(
-                                                    spotId: entry.spot.id, fromCollection: c.id)
-                                                collectionEntries.removeAll { $0.id == entry.id }
-                                                // Sync the collectionIds on the savedSpotService entry so
-                                                // favouriteCount in CollectionsView updates immediately
-                                                let currentIds = savedSpotService.savedEntries
-                                                    .first(where: { $0.id == entry.spot.id })?.collectionIds ?? []
-                                                let updatedIds = currentIds.filter { $0 != c.id }
-                                                savedSpotService.updateCollectionIds(spotId: entry.spot.id, collectionIds: updatedIds)
-                                            } catch {
-                                                removeError = error.localizedDescription
-                                            }
-                                        }
-                                    } label: {
-                                        Label("Remove from collection", systemImage: "folder.badge.minus")
-                                    }
-                                }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                removeButton(for: entry)
                             }
+                            .listRowBackground(Color.brandSecondary)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                            .listRowSeparatorTint(Color.brandPrimary.opacity(0.1))
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 24)
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .refreshable { await loadEntries() }
             }
         }
-        .refreshable { await loadEntries() }
         .navigationTitle(source.title)
         .navigationBarTitleDisplayMode(.large)
         .background(Color.brandSecondary.ignoresSafeArea())
+        .toolbar {
+            if case .collection(let c) = source {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ShareLink(item: URL(string: "https://qwip.co.uk/collections/\(c.id)")!) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(
+                                c.isShareable
+                                    ? Color.brandPrimary
+                                    : Color.brandPrimary.opacity(0.25)
+                            )
+                    }
+                    .disabled(!c.isShareable)
+                }
+            }
+        }
         .sheet(item: $detailSpot) { detail in
             SpotDetailView(detail: detail)
         }
@@ -142,6 +142,46 @@ struct CollectionDetailView: View {
             Text(removeError ?? "")
         }
         .task { await loadEntries() }
+    }
+
+    // MARK: - Swipe action
+
+    @ViewBuilder
+    private func removeButton(for entry: SavedSpotEntry) -> some View {
+        switch source {
+        case .favourites:
+            Button(role: .destructive) {
+                Task {
+                    do {
+                        try await savedSpotService.unsave(spotId: entry.spot.id)
+                    } catch {
+                        removeError = error.localizedDescription
+                    }
+                }
+            } label: {
+                Label("Remove", systemImage: "xmark")
+            }
+        case .collection(let c):
+            Button(role: .destructive) {
+                Task {
+                    do {
+                        try await collectionService.removeSpot(
+                            spotId: entry.spot.id, fromCollection: c.id)
+                        collectionEntries.removeAll { $0.id == entry.id }
+                        // Sync the collectionIds on the savedSpotService entry so
+                        // favouriteCount in CollectionsView updates immediately
+                        let currentIds = savedSpotService.savedEntries
+                            .first(where: { $0.id == entry.spot.id })?.collectionIds ?? []
+                        let updatedIds = currentIds.filter { $0 != c.id }
+                        savedSpotService.updateCollectionIds(spotId: entry.spot.id, collectionIds: updatedIds)
+                    } catch {
+                        removeError = error.localizedDescription
+                    }
+                }
+            } label: {
+                Label("Remove", systemImage: "xmark")
+            }
+        }
     }
 
     // MARK: - Data
