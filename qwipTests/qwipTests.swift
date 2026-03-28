@@ -92,3 +92,27 @@ struct SavedSpotServiceTests {
         #expect(service.savedEntries.isEmpty)
     }
 }
+
+struct AppRouterTests {
+
+    @Test func parsesValidCollectionURL() {
+        let url = URL(string: "https://qwip.co.uk/collections/abc-123")!
+        #expect(AppRouter.collectionId(from: url) == "abc-123")
+    }
+
+    @Test func ignoresNonCollectionURL() {
+        let url = URL(string: "https://qwip.co.uk/spots/xyz")!
+        #expect(AppRouter.collectionId(from: url) == nil)
+    }
+
+    @Test func ignoresGoogleOAuthURL() {
+        let url = URL(string: "com.googleusercontent.apps.12345:/oauth2callback")!
+        #expect(AppRouter.collectionId(from: url) == nil)
+    }
+
+    @Test func parsesCollectionIdWithTrailingPath() {
+        // Defensive: only the first path component after /collections/ is the ID
+        let url = URL(string: "https://qwip.co.uk/collections/abc-123/extra")!
+        #expect(AppRouter.collectionId(from: url) == "abc-123")
+    }
+}
