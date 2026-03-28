@@ -78,6 +78,21 @@ struct qwipTests {
         #expect(collection.collectionDescription == "Great spots for early birds")
     }
 
+    @Test func collectionMissingDescriptionDecodesNil() throws {
+        let json = """
+        {
+            "id": "abc-123",
+            "name": "Morning Cafes",
+            "is_shareable": false,
+            "spot_count": 3,
+            "created_at": "2026-03-16T09:00:00.000+0000",
+            "updated_at": "2026-03-16T09:00:00.000+0000"
+        }
+        """.data(using: .utf8)!
+        let collection = try makeDecoder().decode(Collection.self, from: json)
+        #expect(collection.collectionDescription == nil)
+    }
+
     @Test func collectionsResponseDecodesFromJSON() throws {
         let json = """
         {
