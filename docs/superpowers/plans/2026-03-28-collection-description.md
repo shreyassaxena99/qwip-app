@@ -2,35 +2,41 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add an optional `description` field to collections, surfaced in the create/edit form and shown as a subtitle in `CollectionDetailView`.
+**Goal:** Wire the optional `description` field (max 500 chars) through the API client, service, create/edit form, and display it as a subtitle in `CollectionDetailView`.
 
-**Architecture:** `collectionDescription: String?` added to the `Collection` model with a `CodingKeys` mapping to the JSON key `"description"`. The field flows through `CollectionAPIClient` request bodies → `CollectionService` optimistic updates → `CollectionFormSheet` TextField → `CollectionDetailView` subtitle section.
+**Architecture:** `collectionDescription: String?` already exists in the `Collection` model and `CollectionService` signatures. The remaining work flows through three layers: `CollectionAPIClient` request bodies → `CollectionFormSheet` UI → `CollectionDetailView` subtitle section.
 
 **Tech Stack:** Swift 6, SwiftUI (iOS 17+), Swift Testing (`import Testing`, `@Test`, `#expect`), `@Observable`
 
 **Spec:** `docs/superpowers/specs/2026-03-28-collection-description-design.md`
 
-**Important:** Do NOT run `xcodebuild`. After each task, ask the user to build (Cmd+B) or run tests (Cmd+U) and wait for their confirmation before proceeding.
+**Note:** User handles all builds (Cmd+B) and test runs (Cmd+U). Do not ask them to run builds or tests — just implement and commit.
 
 ---
 
-### Task 1: Add `collectionDescription` to `Collection` model and update tests
+## Already Done
+
+- `qwip/Models/Collection.swift` — `collectionDescription: String?` with `CodingKeys` mapping to `"description"` ✓
+- `qwipTests/qwipTests.swift` — `collectionDecodesFromJSON`, `collectionDecodesNullDescription`, `collectionDecodesDescription` tests ✓
+- `CollectionService` — `create` and `update` already accept `collectionDescription: String?` ✓; `incrementSpotCount` already preserves it ✓
+
+---
+
+### Task 1: Add missing description decoding test
 
 **Files:**
-- Modify: `qwip/Models/Collection.swift`
-- Test: `qwipTests/qwipTests.swift`
+- Modify: `qwipTests/qwipTests.swift`
 
-- [ ] **Step 1: Write failing tests**
+- [ ] **Step 1: Add test for absent description key**
 
-Add two new tests to the `qwipTests` struct in `qwipTests/qwipTests.swift`:
+In `qwipTests.swift`, add this test to the `qwipTests` struct after `collectionDecodesDescription`:
 
 ```swift
-@Test func collectionDecodesNullDescription() throws {
+@Test func collectionMissingDescriptionDecodesNil() throws {
     let json = """
     {
         "id": "abc-123",
         "name": "Morning Cafes",
-        "description": null,
         "is_shareable": false,
         "spot_count": 3,
         "created_at": "2026-03-16T09:00:00.000+0000",
@@ -40,80 +46,30 @@ Add two new tests to the `qwipTests` struct in `qwipTests/qwipTests.swift`:
     let collection = try makeDecoder().decode(Collection.self, from: json)
     #expect(collection.collectionDescription == nil)
 }
-
-@Test func collectionDecodesDescription() throws {
-    let json = """
-    {
-        "id": "abc-123",
-        "name": "Morning Cafes",
-        "description": "Great spots for early birds",
-        "is_shareable": false,
-        "spot_count": 3,
-        "created_at": "2026-03-16T09:00:00.000+0000",
-        "updated_at": "2026-03-16T09:00:00.000+0000"
-    }
-    """.data(using: .utf8)!
-    let collection = try makeDecoder().decode(Collection.self, from: json)
-    #expect(collection.collectionDescription == "Great spots for early birds")
-}
 ```
 
-Also update the existing `collectionDecodesFromJSON` test — add `"description": null` to the JSON and assert `#expect(collection.collectionDescription == nil)`.
+This verifies that older API responses without a `"description"` key decode without error.
 
-- [ ] **Step 2: Ask user to run tests (Cmd+U) — expect compile error**
-
-Ask the user: "Please do a Cmd+U — expected to fail with `value of type 'Collection' has no member 'collectionDescription'`."
-
-Wait for confirmation before continuing.
-
-- [ ] **Step 3: Update `Collection` model**
-
-Replace the entire `qwip/Models/Collection.swift` with:
-
-```swift
-import Foundation
-
-struct Collection: Identifiable, Codable, Hashable {
-    let id: String
-    let name: String
-    let collectionDescription: String?
-    let isShareable: Bool
-    let spotCount: Int
-    let createdAt: Date
-    let updatedAt: Date
-
-    enum CodingKeys: String, CodingKey {
-        case id, name, isShareable, spotCount, createdAt, updatedAt
-        case collectionDescription = "description"
-    }
-}
-```
-
-- [ ] **Step 4: Ask user to run tests (Cmd+U) — expect pass**
-
-Ask the user: "Please do a Cmd+U — all tests should pass including the two new description tests."
-
-Wait for confirmation before continuing.
-
-- [ ] **Step 5: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
-git add qwip/Models/Collection.swift qwipTests/qwipTests.swift
-git commit -m "feat: add collectionDescription to Collection model"
+git add qwipTests/qwipTests.swift
+git commit -m "test: verify missing description key decodes to nil"
 ```
 
 ---
 
-### Task 2: Update `CollectionAPIClient` request bodies and function signatures
+### Task 2: Update `CollectionAPIClient` request bodies and method signatures
 
 **Files:**
 - Modify: `qwip/Services/CollectionAPIClient.swift`
 
-- [ ] **Step 1: Update `CreateCollectionBody`**
+- [ ] **Step 1: Update request body structs**
 
 Replace:
 ```swift
 private struct CreateCollectionBody: Encodable { let name: String; let isShareable: Bool }
+private struct UpdateCollectionBody: Encodable { let name: String; let isShareable: Bool }
 ```
 With:
 ```swift
@@ -122,16 +78,6 @@ private struct CreateCollectionBody: Encodable {
     let description: String?
     let isShareable: Bool
 }
-```
-
-- [ ] **Step 2: Update `UpdateCollectionBody`**
-
-Replace:
-```swift
-private struct UpdateCollectionBody: Encodable { let name: String; let isShareable: Bool }
-```
-With:
-```swift
 private struct UpdateCollectionBody: Encodable {
     let name: String
     let description: String?
@@ -139,7 +85,9 @@ private struct UpdateCollectionBody: Encodable {
 }
 ```
 
-- [ ] **Step 3: Update `createCollection` function**
+The encoder uses `.convertToSnakeCase` but `description` stays `"description"` — no `CodingKeys` needed.
+
+- [ ] **Step 2: Update `createCollection` signature and body**
 
 Replace:
 ```swift
@@ -156,7 +104,7 @@ func createCollection(name: String, description: String?, isShareable: Bool) asy
     req.httpBody = try encoder.encode(CreateCollectionBody(name: name, description: description, isShareable: isShareable))
 ```
 
-- [ ] **Step 4: Update `updateCollection` function**
+- [ ] **Step 3: Update `updateCollection` signature and body**
 
 Replace:
 ```swift
@@ -173,13 +121,7 @@ func updateCollection(id: String, name: String, description: String?, isShareabl
     req.httpBody = try encoder.encode(UpdateCollectionBody(name: name, description: description, isShareable: isShareable))
 ```
 
-- [ ] **Step 5: Ask user to build (Cmd+B)**
-
-Ask the user: "Please do a Cmd+B — expected compile errors in `CollectionService` (callers not yet updated)."
-
-Wait for confirmation before continuing.
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add qwip/Services/CollectionAPIClient.swift
@@ -188,93 +130,42 @@ git commit -m "feat: add description to CollectionAPIClient request bodies"
 
 ---
 
-### Task 3: Update `CollectionService` — signatures and all stub constructions
+### Task 3: Thread `collectionDescription` through `CollectionService` to the API client
 
 **Files:**
 - Modify: `qwip/Services/CollectionService.swift`
 
-There are three places where `Collection` is constructed memberwise and must include `collectionDescription`.
+The `create` and `update` methods already accept `collectionDescription: String?` but pass it to neither the API client nor the optimistic stub. Fix both.
 
-- [ ] **Step 1: Update `create` method**
+- [ ] **Step 1: Update `create` API client call**
 
-Replace the entire `create` method:
-
+In `CollectionService.create`, replace:
 ```swift
-@discardableResult
-func create(name: String, collectionDescription: String? = nil, isShareable: Bool = false) async throws -> Collection {
-    let stubId = UUID().uuidString
-    let stub = Collection(id: stubId, name: name, collectionDescription: collectionDescription,
-                          isShareable: isShareable, spotCount: 0,
-                          createdAt: .now, updatedAt: .now)
-    collections.append(stub)
-    do {
-        let real = try await CollectionAPIClient.shared.createCollection(
-            name: name, description: collectionDescription, isShareable: isShareable)
-        if let index = collections.firstIndex(where: { $0.id == stubId }) {
-            collections[index] = real
-        }
-        return real
-    } catch {
-        collections.removeAll { $0.id == stubId }
-        throw error
-    }
-}
+let real = try await CollectionAPIClient.shared.createCollection(name: name, isShareable: isShareable)
+```
+With:
+```swift
+let real = try await CollectionAPIClient.shared.createCollection(
+    name: name, description: collectionDescription, isShareable: isShareable)
 ```
 
-- [ ] **Step 2: Update `update` method**
+- [ ] **Step 2: Update `update` API client call**
 
-Replace the entire `update` method:
-
+In `CollectionService.update`, replace:
 ```swift
-func update(id: String, name: String, collectionDescription: String?, isShareable: Bool) async throws {
-    guard let index = collections.firstIndex(where: { $0.id == id }) else { return }
-    let old = collections[index]
-    collections[index] = Collection(id: old.id, name: name,
-                                    collectionDescription: collectionDescription,
-                                    isShareable: isShareable, spotCount: old.spotCount,
-                                    createdAt: old.createdAt, updatedAt: .now)
-    do {
-        let updated = try await CollectionAPIClient.shared.updateCollection(
-            id: id, name: name, description: collectionDescription, isShareable: isShareable)
-        if let newIndex = collections.firstIndex(where: { $0.id == id }) {
-            collections[newIndex] = updated
-        }
-    } catch {
-        if let newIndex = collections.firstIndex(where: { $0.id == id }) {
-            collections[newIndex] = old
-        }
-        throw error
-    }
-}
+let updated = try await CollectionAPIClient.shared.updateCollection(id: id, name: name, isShareable: isShareable)
+```
+With:
+```swift
+let updated = try await CollectionAPIClient.shared.updateCollection(
+    id: id, name: name, description: collectionDescription, isShareable: isShareable)
 ```
 
-- [ ] **Step 3: Update `incrementSpotCount` helper**
-
-Replace the existing `incrementSpotCount` body:
-
-```swift
-private func incrementSpotCount(for collectionId: String, by delta: Int) {
-    guard let index = collections.firstIndex(where: { $0.id == collectionId }) else { return }
-    let old = collections[index]
-    collections[index] = Collection(id: old.id, name: old.name,
-                                    collectionDescription: old.collectionDescription,
-                                    isShareable: old.isShareable,
-                                    spotCount: max(0, old.spotCount + delta),
-                                    createdAt: old.createdAt, updatedAt: old.updatedAt)
-}
-```
-
-- [ ] **Step 4: Ask user to build (Cmd+B)**
-
-Ask the user: "Please do a Cmd+B — expected compile errors in `CollectionsView` (callers not yet updated)."
-
-Wait for confirmation before continuing.
-
-- [ ] **Step 5: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
 git add qwip/Services/CollectionService.swift
-git commit -m "feat: thread collectionDescription through CollectionService"
+git commit -m "feat: thread collectionDescription through CollectionService to API client"
 ```
 
 ---
@@ -284,11 +175,11 @@ git commit -m "feat: thread collectionDescription through CollectionService"
 **Files:**
 - Modify: `qwip/Views/CollectionsView.swift`
 
-`CollectionFormSheet` is defined at the bottom of `CollectionsView.swift`. Its callers are the create sheet and edit sheet in `CollectionsView.body`.
+`CollectionFormSheet` lives at the bottom of this file. Two callers are in `CollectionsView.body`: the create sheet and the edit sheet.
 
-- [ ] **Step 1: Update `CollectionFormSheet` struct**
+- [ ] **Step 1: Replace `CollectionFormSheet`**
 
-Replace the entire `CollectionFormSheet` struct with:
+Replace the entire `CollectionFormSheet` struct (starting at `struct CollectionFormSheet: View`) with:
 
 ```swift
 struct CollectionFormSheet: View {
@@ -319,10 +210,13 @@ struct CollectionFormSheet: View {
                         .submitLabel(.next)
                 }
                 Section {
-                    TextField("Description (optional)", text: $descriptionText)
+                    TextField("Description (optional)", text: $descriptionText, axis: .vertical)
+                        .lineLimit(1...3)
                         .font(.dmSans(15))
                         .foregroundStyle(Color.brandPrimary)
-                        .submitLabel(.done)
+                        .onChange(of: descriptionText) { _, new in
+                            if new.count > 500 { descriptionText = String(new.prefix(500)) }
+                        }
                 }
                 Section {
                     Toggle(isOn: $isShareable) {
@@ -352,7 +246,7 @@ struct CollectionFormSheet: View {
                     Button("Save") {
                         let trimmedName = name.trimmingCharacters(in: .whitespaces)
                         guard !trimmedName.isEmpty else { return }
-                        let trimmedDesc = descriptionText.trimmingCharacters(in: .whitespaces)
+                        let trimmedDesc = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
                         onSave(trimmedName, trimmedDesc.isEmpty ? nil : trimmedDesc, isShareable)
                         dismiss()
                     }
@@ -370,7 +264,7 @@ struct CollectionFormSheet: View {
 
 - [ ] **Step 2: Update the create sheet caller**
 
-Find the create sheet in `CollectionsView.body`:
+Replace:
 ```swift
 .sheet(isPresented: $showCreateSheet) {
     CollectionFormSheet(title: "New Collection") { name, isShareable in
@@ -381,8 +275,7 @@ Find the create sheet in `CollectionsView.body`:
     }
 }
 ```
-
-Replace with:
+With:
 ```swift
 .sheet(isPresented: $showCreateSheet) {
     CollectionFormSheet(title: "New Collection") { name, description, isShareable in
@@ -396,7 +289,7 @@ Replace with:
 
 - [ ] **Step 3: Update the edit sheet caller**
 
-Find the edit sheet in `CollectionsView.body`:
+Replace:
 ```swift
 .sheet(item: $editTarget) { target in
     CollectionFormSheet(
@@ -405,14 +298,13 @@ Find the edit sheet in `CollectionsView.body`:
         initialShareable: target.isShareable
     ) { name, isShareable in
         Task {
-            do { try await collectionService.update(id: target.id, name: name, isShareable: isShareable) }
+            do { try await collectionService.update(id: target.id, name: name, collectionDescription: nil, isShareable: isShareable) }
             catch { actionError = error.localizedDescription }
         }
     }
 }
 ```
-
-Replace with:
+With:
 ```swift
 .sheet(item: $editTarget) { target in
     CollectionFormSheet(
@@ -429,13 +321,7 @@ Replace with:
 }
 ```
 
-- [ ] **Step 4: Ask user to build (Cmd+B)**
-
-Ask the user: "Please do a Cmd+B — should build cleanly."
-
-Wait for confirmation before continuing.
-
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add qwip/Views/CollectionsView.swift
@@ -449,55 +335,36 @@ git commit -m "feat: add description field to CollectionFormSheet"
 **Files:**
 - Modify: `qwip/Views/CollectionDetailView.swift`
 
-The subtitle section goes inside the `List` branch of the `Group`, as the first `Section` before the `ForEach`.
+The description section goes at the top of the `List`, before the spots `ForEach`. The `List` is in the `else` branch at the end of the `Group` in `body`.
 
-- [ ] **Step 1: Add description subtitle section**
+- [ ] **Step 1: Add description section to the List**
 
-In the `List` branch (currently starting at line 76), the `List` content is:
+In `CollectionDetailView.body`, find the `List` block:
 ```swift
 List {
     ForEach(displayEntries) { entry in
-        ...
-    }
-}
 ```
 
-Add a description section before the `ForEach`:
+Add the description section before `ForEach`:
 ```swift
 List {
     if case .collection(let c) = source,
        let desc = c.collectionDescription, !desc.isEmpty {
         Section {
             Text(desc)
-                .font(.dmSans(13))
+                .font(.dmSans(14))
                 .foregroundStyle(Color.brandPrimary.opacity(0.55))
+                .padding(.vertical, 4)
                 .listRowBackground(Color.brandSecondary)
+                .listRowSeparator(.hidden)
         }
     }
     ForEach(displayEntries) { entry in
-        ...
-    }
-}
 ```
 
-- [ ] **Step 2: Ask user to build (Cmd+B)**
-
-Ask the user: "Please do a Cmd+B — should build cleanly."
-
-Wait for confirmation before continuing.
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add qwip/Views/CollectionDetailView.swift
-git commit -m "feat: show collection description as subtitle in CollectionDetailView"
+git commit -m "feat: show collection description subtitle in CollectionDetailView"
 ```
-
----
-
-### Task 6: Manual verification
-
-- [ ] **Create a collection with a description** — tap + in Collections tab, fill in name + description, save. Verify it appears in the API response (check that the subtitle shows in CollectionDetailView).
-- [ ] **Edit a collection** — swipe to edit, verify description field is pre-populated, change it, save.
-- [ ] **Clear a description** — edit a collection, delete the description text, save. Verify nil is sent (description subtitle disappears).
-- [ ] **Collection with no description** — verify no subtitle section appears, no empty space.
