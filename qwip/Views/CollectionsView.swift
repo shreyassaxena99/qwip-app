@@ -93,9 +93,9 @@ struct CollectionsView: View {
             }
             // Create sheet
             .sheet(isPresented: $showCreateSheet) {
-                CollectionFormSheet(title: "New Collection") { name, isShareable in
+                CollectionFormSheet(title: "New Collection") { name, description, isShareable in
                     Task {
-                        do { try await collectionService.create(name: name, isShareable: isShareable) }
+                        do { try await collectionService.create(name: name, collectionDescription: description, isShareable: isShareable) }
                         catch { actionError = error.localizedDescription }
                     }
                 }
@@ -105,10 +105,11 @@ struct CollectionsView: View {
                 CollectionFormSheet(
                     title: "Edit Collection",
                     initialName: target.name,
+                    initialDescription: target.collectionDescription ?? "",
                     initialShareable: target.isShareable
-                ) { name, isShareable in
+                ) { name, description, isShareable in
                     Task {
-                        do { try await collectionService.update(id: target.id, name: name, collectionDescription: nil, isShareable: isShareable) }
+                        do { try await collectionService.update(id: target.id, name: name, collectionDescription: description, isShareable: isShareable) }
                         catch { actionError = error.localizedDescription }
                     }
                 }
@@ -235,17 +236,19 @@ private struct CollectionRow: View {
 
 struct CollectionFormSheet: View {
     let title: String
-    let onSave: (String, Bool) -> Void
+    let onSave: (String, String?, Bool) -> Void
 
     @State private var name: String
+    @State private var descriptionText: String
     @State private var isShareable: Bool
     @Environment(\.dismiss) private var dismiss
 
-    init(title: String, initialName: String = "", initialShareable: Bool = false,
-         onSave: @escaping (String, Bool) -> Void) {
+    init(title: String, initialName: String = "", initialDescription: String = "",
+         initialShareable: Bool = false, onSave: @escaping (String, String?, Bool) -> Void) {
         self.title = title
         self.onSave = onSave
         _name = State(initialValue: initialName)
+        _descriptionText = State(initialValue: initialDescription)
         _isShareable = State(initialValue: initialShareable)
     }
 
@@ -256,7 +259,16 @@ struct CollectionFormSheet: View {
                     TextField("Collection name", text: $name)
                         .font(.dmSans(15))
                         .foregroundStyle(Color.brandPrimary)
-                        .submitLabel(.done)
+                        .submitLabel(.next)
+                }
+                Section {
+                    TextField("Description (optional)", text: $descriptionText, axis: .vertical)
+                        .lineLimit(1...3)
+                        .font(.dmSans(15))
+                        .foregroundStyle(Color.brandPrimary)
+                        .onChange(of: descriptionText) { _, new in
+                            if new.count > 500 { descriptionText = String(new.prefix(500)) }
+                        }
                 }
                 Section {
                     Toggle(isOn: $isShareable) {
@@ -284,9 +296,10 @@ struct CollectionFormSheet: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") {
-                        let trimmed = name.trimmingCharacters(in: .whitespaces)
-                        guard !trimmed.isEmpty else { return }
-                        onSave(trimmed, isShareable)
+                        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+                        guard !trimmedName.isEmpty else { return }
+                        let trimmedDesc = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        onSave(trimmedName, trimmedDesc.isEmpty ? nil : trimmedDesc, isShareable)
                         dismiss()
                     }
                     .font(.dmSans(15, weight: .bold))
@@ -295,7 +308,7 @@ struct CollectionFormSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
         .presentationBackground(Color.brandSecondary)
     }
 }
