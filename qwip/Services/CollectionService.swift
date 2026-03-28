@@ -37,7 +37,8 @@ final class CollectionService {
                               createdAt: .now, updatedAt: .now)
         collections.append(stub)
         do {
-            let real = try await CollectionAPIClient.shared.createCollection(name: name, isShareable: isShareable)
+            let real = try await CollectionAPIClient.shared.createCollection(
+                name: name, description: collectionDescription, isShareable: isShareable)
             if let index = collections.firstIndex(where: { $0.id == stubId }) {
                 collections[index] = real
             }
@@ -59,7 +60,8 @@ final class CollectionService {
                                         spotCount: old.spotCount, createdAt: old.createdAt,
                                         updatedAt: .now)
         do {
-            let updated = try await CollectionAPIClient.shared.updateCollection(id: id, name: name, isShareable: isShareable)
+            let updated = try await CollectionAPIClient.shared.updateCollection(
+                id: id, name: name, description: collectionDescription, isShareable: isShareable)
             if let newIndex = collections.firstIndex(where: { $0.id == id }) {
                 collections[newIndex] = updated
             }
