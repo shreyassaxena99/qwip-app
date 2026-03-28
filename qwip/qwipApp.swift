@@ -6,6 +6,7 @@ import GoogleSignIn
 struct qwipApp: App {
 
     @State private var authService = AuthService()
+    @State private var appRouter = AppRouter()
 
     init() {
         // Font registration
@@ -43,18 +44,26 @@ struct qwipApp: App {
         UITabBar.appearance().scrollEdgeAppearance  = bar
 
         // Required by GoogleSignIn-iOS v7+ — must be set before the first sign-in attempt.
-        GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: Config.googleIOSClientID)
+        GIDSignIn.sharedInstance.configuration = GIDConfiguration(
+            clientID: Config.googleIOSClientID,
+            serverClientID: Config.googleWebClientID
+        )
     }
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(authService)
+                .environment(appRouter)
                 .task {
                     await authService.restoreSession()
                 }
                 .onOpenURL { url in
-                    GIDSignIn.sharedInstance.handle(url)
+                    if url.scheme?.hasPrefix("com.googleusercontent.apps") == true {
+                        GIDSignIn.sharedInstance.handle(url)
+                    } else if let id = AppRouter.collectionId(from: url) {
+                        appRouter.pendingCollectionId = id
+                    }
                 }
         }
     }
