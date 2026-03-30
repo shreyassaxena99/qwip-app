@@ -241,6 +241,7 @@ struct OnboardingView: View {
 
     private func submit() async {
         isLoading = true
+        defer { isLoading = false }
         if let session = authService.session {
             try? await UserProfileAPIClient.saveProfile(
                 userId: session.user.id.uuidString,
