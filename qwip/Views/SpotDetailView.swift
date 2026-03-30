@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreLocation
+import PostHog
 
 struct SpotDetailView: View {
     let detail: SpotDetail
@@ -8,6 +9,7 @@ struct SpotDetailView: View {
     @Environment(\.dismiss) var dismiss
     @State private var currentPhoto = 0
     @State private var showingSaveSheet = false
+    @State private var showingShareSheet = false
 
     var body: some View {
         NavigationStack {
@@ -24,6 +26,13 @@ struct SpotDetailView: View {
                     .padding(20)
                     .padding(.bottom, 12)
                 }
+            }
+            .onAppear {
+                PostHogSDK.shared.capture("spot_viewed", properties: [
+                    "spot_id": detail.id,
+                    "spot_name": detail.name,
+                    "spot_area": detail.shortAddress ?? ""
+                ])
             }
             .background(Color.brandSecondary.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
@@ -60,6 +69,10 @@ struct SpotDetailView: View {
             }
             .sheet(isPresented: $showingSaveSheet) {
                 SaveToCollectionSheet(spot: detail.asSpotPin)
+            }
+            .sheet(isPresented: $showingShareSheet) {
+                ShareSheet(items: [shareText])
+                    .presentationDetents([.medium, .large])
             }
         }
     }
@@ -274,7 +287,14 @@ struct SpotDetailView: View {
         HStack(spacing: 12) {
 
             // Share
-            ShareLink(item: shareText) {
+            Button {
+                PostHogSDK.shared.capture("spot_shared", properties: [
+                    "spot_id": detail.id,
+                    "spot_name": detail.name,
+                    "spot_area": detail.shortAddress ?? ""
+                ])
+                showingShareSheet = true
+            } label: {
                 VStack(spacing: 7) {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 22, weight: .semibold))
@@ -293,6 +313,11 @@ struct SpotDetailView: View {
 
             // Directions
             Button {
+                PostHogSDK.shared.capture("spot_directions_tapped", properties: [
+                    "spot_id": detail.id,
+                    "spot_name": detail.name,
+                    "spot_area": detail.shortAddress ?? ""
+                ])
                 var urlString = "maps://?daddr=\(detail.latitude),\(detail.longitude)&dirflg=d"
                 if let loc = locationService.userLocation {
                     urlString += "&saddr=\(loc.coordinate.latitude),\(loc.coordinate.longitude)"
@@ -341,6 +366,16 @@ struct SpotDetailView: View {
     private func dot() -> some View {
         Text("·").foregroundStyle(Color.brandPrimary.opacity(0.3))
     }
+}
+
+// MARK: - Share Sheet
+
+private struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
 
 // MARK: - Tag Chip
