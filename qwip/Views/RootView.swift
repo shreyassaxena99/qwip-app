@@ -14,6 +14,10 @@ struct RootView: View {
                 NameCollectionView()
                     .transition(.opacity)
                     .zIndex(1)
+            } else if authService.needsOnboarding {
+                OnboardingView()
+                    .transition(.opacity)
+                    .zIndex(1)
             } else if authService.isAuthenticated {
                 ContentView()
                     .environment(\.signOut) {
@@ -41,6 +45,7 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.45), value: showSplash)
         .animation(.easeInOut(duration: 0.45), value: authService.isAuthenticated)
         .animation(.easeInOut(duration: 0.45), value: authService.needsDisplayName)
+        .animation(.easeInOut(duration: 0.45), value: authService.needsOnboarding)
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
                 showSplash = false
