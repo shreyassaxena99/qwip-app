@@ -1,4 +1,5 @@
 import SwiftUI
+import PostHog
 
 struct SaveToCollectionSheet: View {
     let spot: SpotPin
@@ -268,6 +269,12 @@ struct SaveToCollectionSheet: View {
                     let removed = original.subtracting(selectedIds)
                     for id in added {
                         _ = try await collectionService.addSpot(spotId: spot.id, toCollection: id)
+                        PostHogSDK.shared.capture("collection_spot_added", properties: [
+                            "spot_id": spot.id,
+                            "spot_name": spot.name,
+                            "spot_area": spot.shortAddress ?? "",
+                            "collection_id": id
+                        ])
                     }
                     for id in removed {
                         try await collectionService.removeSpot(spotId: spot.id, fromCollection: id)
@@ -277,6 +284,14 @@ struct SaveToCollectionSheet: View {
                     savedSpotService.updateCollectionIds(spotId: spot.id, collectionIds: Array(selectedIds))
                 } else {
                     try await savedSpotService.save(spot: spot, collectionIds: Array(selectedIds))
+                    for id in selectedIds {
+                        PostHogSDK.shared.capture("collection_spot_added", properties: [
+                            "spot_id": spot.id,
+                            "spot_name": spot.name,
+                            "spot_area": spot.shortAddress ?? "",
+                            "collection_id": id
+                        ])
+                    }
                 }
                 dismiss()
             } catch {
