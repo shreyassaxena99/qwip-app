@@ -46,12 +46,12 @@ final class SavedSpotService {
             let real = try await SavedSpotAPIClient.shared.saveSpot(spotId: spot.id, collectionIds: collectionIds)
             if let index = savedEntries.firstIndex(where: { $0.id == stub.id }) {
                 savedEntries[index] = real
+                PostHogSDK.shared.capture("spot_saved", properties: [
+                    "spot_id": spot.id,
+                    "spot_name": spot.name,
+                    "spot_area": spot.shortAddress ?? ""
+                ])
             }
-            PostHogSDK.shared.capture("spot_saved", properties: [
-                "spot_id": spot.id,
-                "spot_name": spot.name,
-                "spot_area": spot.shortAddress ?? ""
-            ])
         } catch {
             savedEntries.removeAll { $0.id == stub.id }
             throw error
