@@ -1,4 +1,5 @@
 import SwiftUI
+import Supabase
 
 struct OnboardingView: View {
     @Environment(AuthService.self) private var authService
