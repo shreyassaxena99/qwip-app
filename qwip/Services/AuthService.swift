@@ -1,6 +1,8 @@
 import Foundation
 import Supabase
 import GoogleSignIn
+import CryptoKit
+import PostHog
 
 @Observable
 @MainActor
@@ -9,13 +11,16 @@ final class AuthService {
     // MARK: - State
 
     private(set) var session: Session?
+    private var _displayName: String? = nil
+    var emailOptIn: Bool = false
+    private(set) var needsOnboarding: Bool = false
 
     var isAuthenticated: Bool {
         session != nil
     }
 
     var displayName: String? {
-        session?.user.userMetadata["name"]?.stringValue
+        _displayName ?? session?.user.userMetadata["name"]?.stringValue
     }
 
     var needsDisplayName: Bool {
@@ -32,8 +37,14 @@ final class AuthService {
         // @MainActor is explicit on the Task to make actor inheritance clear —
         // AuthService is @MainActor, so writes to self.session are safe.
         Task { @MainActor in
-            for await (_, session) in supabase.auth.authStateChanges {
+            for await (event, session) in supabase.auth.authStateChanges {
                 self.session = session
+                if session == nil {
+                    needsOnboarding = false
+                } else if event == .signedIn || event == .initialSession, let session {
+                    await checkOnboardingStatus(session: session)
+                    identify(userId: session.user.id.uuidString)
+                }
             }
         }
     }
@@ -60,7 +71,25 @@ final class AuthService {
             throw AuthError.noPresentingViewController
         }
 
-        let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController)
+        let rawNonce = randomNonceString()
+        let hashedNonce = sha256(rawNonce)
+
+        let result: GIDSignInResult = try await withCheckedThrowingContinuation { continuation in
+            GIDSignIn.sharedInstance.signIn(
+                withPresenting: rootViewController,
+                hint: nil,
+                additionalScopes: nil,
+                nonce: hashedNonce
+            ) { signInResult, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if let signInResult {
+                    continuation.resume(returning: signInResult)
+                } else {
+                    continuation.resume(throwing: AuthError.missingIDToken)
+                }
+            }
+        }
 
         guard let idToken = result.user.idToken?.tokenString else {
             throw AuthError.missingIDToken
@@ -69,7 +98,8 @@ final class AuthService {
         try await supabase.auth.signInWithIdToken(credentials: OpenIDConnectCredentials(
             provider: .google,
             idToken: idToken,
-            accessToken: result.user.accessToken.tokenString
+            accessToken: result.user.accessToken.tokenString,
+            nonce: rawNonce
         ))
         // session is updated automatically via authStateChanges
     }
@@ -85,10 +115,24 @@ final class AuthService {
         // session is updated automatically via authStateChanges
     }
 
-    // MARK: - Display Name
+    // MARK: - Profile
 
-    func updateDisplayName(_ name: String) async throws {
-        try await supabase.auth.update(user: UserAttributes(data: ["name": .string(name)]))
+    func updateProfile(displayName: String? = nil, emailOptIn: Bool? = nil) async throws {
+        guard let token = supabase.auth.currentSession?.accessToken else {
+            throw AuthError.notAuthenticated
+        }
+        let url = URL(string: "https://spotsvc.up.railway.app/me")!
+        var req = URLRequest(url: url)
+        req.httpMethod = "PATCH"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(PatchMeBody(displayName: displayName, emailOptIn: emailOptIn))
+        let (data, response) = try await URLSession.shared.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200...299).contains(status) else { throw AuthError.updateProfileFailed(status) }
+        let me = try JSONDecoder().decode(MeResponse.self, from: data)
+        _displayName = me.displayName
+        self.emailOptIn = me.emailOptIn
     }
 
     // MARK: - Sign Out
@@ -97,6 +141,99 @@ final class AuthService {
         try await supabase.auth.signOut()
         // session is set to nil automatically via authStateChanges
     }
+
+    // MARK: - Onboarding
+
+    private func checkOnboardingStatus(session: Session) async {
+        let exists = await UserProfileAPIClient.fetchExists(
+            userId: session.user.id.uuidString,
+            token: session.accessToken
+        )
+        needsOnboarding = !exists
+    }
+
+    func completeOnboarding() {
+        needsOnboarding = false
+    }
+
+    // MARK: - Analytics
+
+    func identify(userId: String) {
+        PostHogSDK.shared.identify(userId, userProperties: [:])
+    }
+
+    // MARK: - Delete Account
+
+    func deleteAccount() async throws {
+        guard let token = supabase.auth.currentSession?.accessToken else {
+            throw AuthError.notAuthenticated
+        }
+        let url = URL(string: "https://spotsvc.up.railway.app/me")!
+        var req = URLRequest(url: url)
+        req.httpMethod = "DELETE"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (_, response) = try await URLSession.shared.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200...299).contains(status) else { throw AuthError.deleteAccountFailed(status) }
+        try await supabase.auth.signOut()
+    }
+}
+
+// MARK: - Profile request/response
+
+private struct PatchMeBody: Encodable {
+    let displayName: String?
+    let emailOptIn: Bool?
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        if let v = displayName { try c.encode(v, forKey: .displayName) }
+        if let v = emailOptIn  { try c.encode(v, forKey: .emailOptIn) }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case displayName = "display_name"
+        case emailOptIn  = "email_opt_in"
+    }
+}
+
+private struct MeResponse: Decodable {
+    let displayName: String
+    let emailOptIn: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case displayName = "display_name"
+        case emailOptIn  = "email_opt_in"
+    }
+}
+
+// MARK: - Nonce Helpers
+
+private func randomNonceString(length: Int = 32) -> String {
+    let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+    var result = ""
+    var remainingLength = length
+    while remainingLength > 0 {
+        let randoms: [UInt8] = (0..<16).map { _ in
+            var random: UInt8 = 0
+            _ = SecRandomCopyBytes(kSecRandomDefault, 1, &random)
+            return random
+        }
+        for random in randoms {
+            if remainingLength == 0 { break }
+            if random < charset.count {
+                result.append(charset[Int(random)])
+                remainingLength -= 1
+            }
+        }
+    }
+    return result
+}
+
+private func sha256(_ input: String) -> String {
+    let data = Data(input.utf8)
+    let hash = SHA256.hash(data: data)
+    return hash.compactMap { String(format: "%02x", $0) }.joined()
 }
 
 // MARK: - Errors
@@ -104,6 +241,9 @@ final class AuthService {
 enum AuthError: LocalizedError {
     case noPresentingViewController
     case missingIDToken
+    case notAuthenticated
+    case deleteAccountFailed(Int)
+    case updateProfileFailed(Int)
 
     var errorDescription: String? {
         switch self {
@@ -111,6 +251,12 @@ enum AuthError: LocalizedError {
             return "Could not find a view controller to present sign-in."
         case .missingIDToken:
             return "Google sign-in did not return an ID token."
+        case .notAuthenticated:
+            return "You must be signed in to perform this action."
+        case .deleteAccountFailed(let code):
+            return "Account deletion failed (server error \(code)). Please try again."
+        case .updateProfileFailed(let code):
+            return "Couldn't save your changes (server error \(code)). Please try again."
         }
     }
 }
