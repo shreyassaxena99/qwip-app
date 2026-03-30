@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import PostHog
 
 @Observable
 @MainActor
@@ -46,6 +47,11 @@ final class SavedSpotService {
             if let index = savedEntries.firstIndex(where: { $0.id == stub.id }) {
                 savedEntries[index] = real
             }
+            PostHogSDK.shared.capture("spot_saved", properties: [
+                "spot_id": spot.id,
+                "spot_name": spot.name,
+                "spot_area": spot.shortAddress ?? ""
+            ])
         } catch {
             savedEntries.removeAll { $0.id == stub.id }
             throw error
