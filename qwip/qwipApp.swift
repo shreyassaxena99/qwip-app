@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreText
 import GoogleSignIn
+import PostHog
 
 @main
 struct qwipApp: App {
@@ -9,6 +10,13 @@ struct qwipApp: App {
     @State private var appRouter = AppRouter()
 
     init() {
+        // PostHog setup
+        let postHogConfig = PostHogConfig(
+            apiKey: Config.postHogAPIKey,
+            host: "https://eu.i.posthog.com"
+        )
+        PostHogSDK.shared.setup(postHogConfig)
+
         // Font registration
         let fontFiles = [
             "FunnelDisplay-Regular.ttf",
