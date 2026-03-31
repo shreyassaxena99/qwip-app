@@ -242,7 +242,7 @@ private struct NameStepView: View {
 
                     Text("one last thing,")
                         .font(.funnelDisplay(18, weight: .bold))
-                        .foregroundColor(Color.brandPrimary.opacity(0.5))
+                        .foregroundStyle(Color.brandPrimary.opacity(0.5))
                 }
                 .padding(.top, 100)
                 .padding(.bottom, 44)
