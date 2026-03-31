@@ -23,12 +23,6 @@ final class AuthService {
         _displayName ?? session?.user.userMetadata["name"]?.stringValue
     }
 
-    var needsDisplayName: Bool {
-        guard isAuthenticated else { return false }
-        guard session?.user.appMetadata["provider"]?.stringValue == "email" else { return false }
-        return displayName == nil || displayName!.isEmpty
-    }
-
     // MARK: - Init
 
     init() {

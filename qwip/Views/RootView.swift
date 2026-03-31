@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(AuthService.self) private var authService
     @State private var showSplash = true
+    @State private var pendingOTPEmail: String? = nil
 
     var body: some View {
         ZStack {
@@ -10,10 +11,6 @@ struct RootView: View {
                 SplashView()
                     .transition(.opacity)
                     .zIndex(2)
-            } else if authService.needsDisplayName {
-                NameCollectionView()
-                    .transition(.opacity)
-                    .zIndex(1)
             } else if authService.needsOnboarding {
                 OnboardingView()
                     .transition(.opacity)
@@ -32,20 +29,34 @@ struct RootView: View {
                     .transition(.opacity)
                     .zIndex(1)
             } else {
-                SignInView()
-                    .transition(
-                        .asymmetric(
-                            insertion: .move(edge: .bottom).combined(with: .opacity),
-                            removal: .opacity
-                        )
+                SignInView(onOTPSent: { email in
+                    pendingOTPEmail = email
+                })
+                .transition(
+                    .asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .opacity
                     )
-                    .zIndex(1)
+                )
+                .zIndex(1)
             }
         }
         .animation(.easeInOut(duration: 0.45), value: showSplash)
         .animation(.easeInOut(duration: 0.45), value: authService.isAuthenticated)
-        .animation(.easeInOut(duration: 0.45), value: authService.needsDisplayName)
         .animation(.easeInOut(duration: 0.45), value: authService.needsOnboarding)
+        .fullScreenCover(isPresented: Binding(
+            get: { pendingOTPEmail != nil },
+            set: { if !$0 { pendingOTPEmail = nil } }
+        )) {
+            if let email = pendingOTPEmail {
+                EmailOnboardingView(
+                    email: email,
+                    onBack: { pendingOTPEmail = nil },
+                    onComplete: { pendingOTPEmail = nil }
+                )
+                .environment(authService)
+            }
+        }
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
                 showSplash = false

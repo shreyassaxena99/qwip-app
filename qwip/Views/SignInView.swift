@@ -2,13 +2,14 @@ import SwiftUI
 
 struct SignInView: View {
 
+    var onOTPSent: (String) -> Void
+
     @Environment(AuthService.self) private var authService
 
     @State private var email: String = ""
     @State private var isLoading: Bool = false
     @State private var contentOpacity: Double = 0
     @State private var contentOffset: CGFloat = 28
-    @State private var showOTP: Bool = false
     @State private var errorMessage: String?
     @FocusState private var emailFocused: Bool
 
@@ -184,16 +185,6 @@ struct SignInView: View {
                 contentOffset = 0
             }
         }
-        .fullScreenCover(isPresented: $showOTP) {
-            OTPVerificationView(
-                email: email,
-                onBack: { showOTP = false }
-            )
-            // fullScreenCover renders in a new scene graph branch and does NOT
-            // inherit the parent's environment in iOS 17. AuthService must be
-            // re-injected explicitly here or OTPVerificationView will crash.
-            .environment(authService)
-        }
     }
 
     private func signInWithGoogle() async {
@@ -215,7 +206,7 @@ struct SignInView: View {
         errorMessage = nil
         do {
             try await authService.sendOTP(email: email)
-            showOTP = true
+            onOTPSent(email)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -269,6 +260,6 @@ struct GlassSocialButton: View {
 }
 
 #Preview {
-    SignInView()
+    SignInView(onOTPSent: { _ in })
         .environment(AuthService())
 }
