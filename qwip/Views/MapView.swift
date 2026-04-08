@@ -793,9 +793,15 @@ struct FilterPill: View {
     var icon: String? = nil
     let isActive: Bool
     let action: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+
+    private static let lavender = Color(red: 0xC9/255, green: 0xB8/255, blue: 0xE0/255)
 
     var body: some View {
-        if isActive {
+        if isActive && colorScheme == .dark {
+            pill
+                .background(Capsule().fill(Self.lavender))
+        } else if isActive {
             pill.glassEffect(in: .capsule)
         } else {
             pill
@@ -813,7 +819,7 @@ struct FilterPill: View {
                     .font(.dmSans(10, weight: .black))
                     .tracking(0.5)
             }
-            .foregroundStyle(Color.primary)
+            .foregroundStyle(isActive && colorScheme == .dark ? Color.black : Color.primary)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
         }
