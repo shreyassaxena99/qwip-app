@@ -196,8 +196,13 @@ struct MapView: View {
             }
         }
         .onMapCameraChange(frequency: .continuous) { context in
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                mapHeading = context.camera.heading
+            let newHeading = context.camera.heading
+            if (abs(newHeading) > 0.5) != (abs(mapHeading) > 0.5) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    mapHeading = newHeading
+                }
+            } else {
+                mapHeading = newHeading
             }
         }
         .ignoresSafeArea()
