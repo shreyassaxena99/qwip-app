@@ -26,6 +26,7 @@ struct MapView: View {
     @State private var detailError: String? = nil
     @State private var hasSetInitialLocation = false
     @State private var showFilters = false
+    @AppStorage("mapStyle") private var mapStylePreference = "standard"
     @State private var is3DEnabled: Bool = false
     @State private var mapHeading: Double = 0
     @State private var currentCamera: MapCamera? = nil
@@ -180,12 +181,11 @@ struct MapView: View {
                 }
             }
         }
-        .mapStyle(.standard(
-            elevation: is3DEnabled ? .realistic : .flat,
-            emphasis: .muted,
-            pointsOfInterest: .excludingAll,
-            showsTraffic: false
-        ))
+        .mapStyle(
+            mapStylePreference == "hybrid"
+                ? .hybrid(elevation: is3DEnabled ? .realistic : .flat, pointsOfInterest: .excludingAll, showsTraffic: false)
+                : .standard(elevation: is3DEnabled ? .realistic : .flat, emphasis: .muted, pointsOfInterest: .excludingAll, showsTraffic: false)
+        )
         .onMapCameraChange(frequency: .onEnd) { context in
             currentCamera = context.camera
             mapSpan = context.region.span
@@ -335,7 +335,7 @@ struct MapView: View {
             }
             Spacer()
         }
-        .padding(.top, 54)
+        .padding(.top, 80)
     }
 
     // MARK: - Selected Spot Preview

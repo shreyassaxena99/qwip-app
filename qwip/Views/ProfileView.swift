@@ -1,210 +1,509 @@
 import SwiftUI
+import Supabase
+
+// MARK: - Profile Field (used by About You sub-view)
+
+private enum ProfileField: Identifiable {
+    case workingStyle, homeArea, workArea
+    var id: Self { self }
+
+    var question: String {
+        switch self {
+        case .workingStyle: return "How do you work?"
+        case .homeArea:     return "Where do you live in London?"
+        case .workArea:     return "Where do you work in London?"
+        }
+    }
+
+    var options: [String] {
+        switch self {
+        case .workingStyle:
+            return ["Fully remote", "Office-based", "Freelance / self-employed", "Student", "Other"]
+        case .homeArea, .workArea:
+            return ["North London", "West London", "North West London", "East London",
+                    "South East London", "South West London", "Central London", "Outside London"]
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .workingStyle: return "briefcase.fill"
+        case .homeArea:     return "house.fill"
+        case .workArea:     return "building.2.fill"
+        }
+    }
+
+    var iconColor: Color {
+        switch self {
+        case .workingStyle: return Color(hex: "5E6AD2")
+        case .homeArea:     return Color(hex: "34C759")
+        case .workArea:     return Color.brandPrimary
+        }
+    }
+}
+
+// MARK: - Navigation destinations
+
+private enum ProfileDestination: Hashable {
+    case aboutYou, preferences, about, myAccount
+}
+
+// MARK: - ProfileView
 
 struct ProfileView: View {
     @Environment(SpotStore.self) var store
     @Environment(SavedSpotService.self) var savedSpotService
     @Environment(AuthService.self) var authService
-    @Environment(\.signOut) var signOut
-    @State private var showingDeleteConfirmation = false
-    @State private var showingNameEdit = false
-    @State private var editingName = ""
 
     var body: some View {
-        @Bindable var bindableStore = store
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
 
-                    // MARK: Profile header
-                    profileHeader
-
-                    // MARK: Stats
+                    // Stats
                     HStack(spacing: 12) {
-                        BigStatCard(value: "\(savedSpotService.savedEntries.count)", label: "Saved Spots", icon: "heart.fill", iconColor: Color(hex: "e74c3c"))
-                        BigStatCard(value: "\(store.spots.count)", label: "Spots Nearby", icon: "mappin.circle.fill", iconColor: Color.brandPrimary)
+                        BigStatCard(
+                            value: "\(savedSpotService.savedEntries.count)",
+                            label: "Saved Spots",
+                            icon: "heart.fill",
+                            iconColor: Color(hex: "e74c3c")
+                        )
+                        BigStatCard(
+                            value: "\(store.spots.count)",
+                            label: "Spots Nearby",
+                            icon: "mappin.circle.fill",
+                            iconColor: Color.brandPrimary
+                        )
                     }
 
-                    // MARK: Preferences
-                    GlassCard(header: "Preferences") {
-                        Toggle(isOn: $bindableStore.emailOptIn) {
-                            Label {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Email Updates")
-                                        .font(.dmSans(14, weight: .bold))
-                                        .foregroundStyle(Color.brandPrimary)
-                                    Text("New spots and local tips")
-                                        .font(.dmSans(12))
-                                        .foregroundStyle(Color.brandPrimary.opacity(0.5))
-                                }
-                            } icon: {
-                                GlassIcon(systemName: "envelope.fill", color: .brandPrimary)
-                            }
-                        }
-                        .tint(Color.brandPrimary)
-                    }
-
-                    // MARK: About
-                    GlassCard(header: "About") {
-                        LabeledContent {
-                            Text("1.0.0")
-                                .font(.dmSans(13, weight: .bold))
-                                .foregroundStyle(Color.brandPrimary.opacity(0.5))
-                        } label: {
-                            Label {
-                                Text("Version")
-                                    .font(.dmSans(14, weight: .bold))
-                                    .foregroundStyle(Color.brandPrimary)
-                            } icon: {
-                                GlassIcon(systemName: "info.circle.fill", color: Color(hex: "5E6AD2"))
-                            }
-                        }
-
-                        Divider().overlay(Color.brandPrimary.opacity(0.08))
-                            .padding(.leading, 44)
-
-                        Link(destination: URL(string: "https://qwip.app/privacy")!) {
-                            HStack {
-                                Label {
-                                    Text("Privacy Policy")
-                                        .font(.dmSans(14, weight: .bold))
-                                        .foregroundStyle(Color.brandPrimary)
-                                } icon: {
-                                    GlassIcon(systemName: "lock.shield.fill", color: Color(hex: "34C759"))
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(Color.brandPrimary.opacity(0.25))
-                            }
-                        }
-                    }
-
-                    // MARK: Account
-                    GlassCard(header: "Account") {
-                        Button {
-                            signOut()
-                        } label: {
-                            HStack {
-                                Label {
-                                    Text("Sign Out")
-                                        .font(.dmSans(14, weight: .bold))
-                                        .foregroundStyle(Color.brandPrimary)
-                                } icon: {
-                                    GlassIcon(systemName: "rectangle.portrait.and.arrow.right", color: Color(hex: "FF9500"))
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(Color.brandPrimary.opacity(0.25))
-                            }
-                        }
-                        .buttonStyle(.plain)
-
-                        Divider().overlay(Color.brandPrimary.opacity(0.08))
-                            .padding(.leading, 44)
-
-                        Button(role: .destructive) {
-                            showingDeleteConfirmation = true
-                        } label: {
-                            HStack {
-                                Label {
-                                    Text("Delete Account")
-                                        .font(.dmSans(14, weight: .bold))
-                                } icon: {
-                                    GlassIcon(systemName: "trash.fill", color: Color(hex: "FF3B30"))
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(Color.brandPrimary.opacity(0.25))
-                            }
-                        }
-                        .buttonStyle(.plain)
+                    // Menu
+                    GlassCard {
+                        menuRow("About You",   icon: "person.fill",             color: Color.brandPrimary,   dest: .aboutYou)
+                        Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                        menuRow("Preferences", icon: "gearshape.fill",          color: Color(hex: "5E6AD2"), dest: .preferences)
+                        Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                        menuRow("About",       icon: "info.circle.fill",        color: Color(hex: "34C759"), dest: .about)
+                        Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                        menuRow("My Account",  icon: "person.crop.circle.fill", color: Color(hex: "FF9500"), dest: .myAccount)
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
             }
             .background(Color.brandSecondary.ignoresSafeArea())
-            .navigationTitle("Profile")
+            .navigationTitle(authService.displayName.map { "Hello, \($0)" } ?? "Hello")
             .navigationBarTitleDisplayMode(.large)
-            .confirmationDialog("Delete Account?", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
-                Button("Delete Account", role: .destructive) { }
-                Button("Cancel", role: .cancel) { }
-            } message: {
-                Text("This will permanently delete your account and all saved spots. This action cannot be undone.")
-            }
-            .alert("Edit Name", isPresented: $showingNameEdit) {
-                TextField("Display name", text: $editingName)
-                Button("Save") {
-                    let trimmed = editingName.trimmingCharacters(in: .whitespaces)
-                    if !trimmed.isEmpty {
-                        Task { try? await authService.updateDisplayName(trimmed) }
-                    }
+            .navigationDestination(for: ProfileDestination.self) { dest in
+                switch dest {
+                case .aboutYou:    AboutYouView()
+                case .preferences: PreferencesView()
+                case .about:       AboutAppView()
+                case .myAccount:   MyAccountView()
                 }
-                Button("Cancel", role: .cancel) { }
             }
         }
     }
 
-    private var profileHeader: some View {
-        ZStack(alignment: .topTrailing) {
-            // Decorative orb
-            Circle()
-                .fill(Color.brandPrimary.opacity(0.07))
-                .frame(width: 120)
-                .offset(x: 20, y: -30)
-                .blur(radius: 20)
-
-            HStack(spacing: 16) {
-                // Avatar
-                ZStack {
-                    Circle()
-                        .fill(Color.brandPrimary)
-                        .frame(width: 64, height: 64)
-                        .shadow(color: Color.brandPrimary.opacity(0.4), radius: 10, x: 0, y: 4)
-                    Text((authService.displayName ?? "?").prefix(1).uppercased())
-                        .font(.dmSans(26, weight: .heavy))
-                        .foregroundStyle(Color.brandSecondary)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(authService.displayName ?? "")
-                        .font(.dmSans(18, weight: .heavy))
-                        .foregroundStyle(Color.brandPrimary)
-                    Text("QWIP MEMBER")
-                        .font(.dmSans(9, weight: .black))
-                        .tracking(1)
-                        .foregroundStyle(Color.brandPrimary.opacity(0.4))
-                }
-
+    private func menuRow(_ title: String, icon: String, color: Color, dest: ProfileDestination) -> some View {
+        NavigationLink(value: dest) {
+            HStack(spacing: 12) {
+                GlassIcon(systemName: icon, color: color)
+                Text(title)
+                    .font(.dmSans(14, weight: .semibold))
+                    .foregroundStyle(Color.brandPrimary)
                 Spacer()
-
-                Button {
-                    editingName = authService.displayName ?? ""
-                    showingNameEdit = true
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                            .overlay(Circle().stroke(Color.brandPrimary.opacity(0.15), lineWidth: 1))
-                            .frame(width: 36, height: 36)
-                        Image(systemName: "pencil")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Color.brandPrimary)
-                    }
-                }
-                .buttonStyle(.plain)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.brandPrimary.opacity(0.25))
             }
-            .padding(18)
+            .contentShape(Rectangle())
         }
-        .background(glassBackground(cornerRadius: 20))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: Color.brandPrimary.opacity(0.1), radius: 16, x: 0, y: 5)
+        .buttonStyle(.plain)
     }
 }
 
-// MARK: - Glass Card container
+// MARK: - About You
+
+private struct AboutYouView: View {
+    @Environment(AuthService.self) var authService
+    @State private var showingNameEdit = false
+    @State private var editingName = ""
+    @State private var workingStyle: String? = nil
+    @State private var homeArea: String? = nil
+    @State private var workArea: String? = nil
+    @State private var isLoadingProfile = true
+    @State private var editingField: ProfileField? = nil
+    @State private var saveError: String? = nil
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                GlassCard {
+                    Button {
+                        editingName = authService.displayName ?? ""
+                        showingNameEdit = true
+                    } label: {
+                        HStack {
+                            Label {
+                                Text("Your name")
+                                    .font(.dmSans(14, weight: .bold))
+                                    .foregroundStyle(Color.brandPrimary)
+                            } icon: {
+                                GlassIcon(systemName: "person.fill", color: Color(hex: "5E6AD2"))
+                            }
+                            Spacer()
+                            Text(authService.displayName ?? "–")
+                                .font(.dmSans(13))
+                                .foregroundStyle(Color.brandPrimary.opacity(authService.displayName != nil ? 0.5 : 0.3))
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color.brandPrimary.opacity(0.25))
+                        }
+                    }
+                    .buttonStyle(.plain)
+
+                    Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                    profileFieldRow(.workingStyle)
+                    Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                    profileFieldRow(.homeArea)
+                    Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                    profileFieldRow(.workArea)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
+        }
+        .background(Color.brandSecondary.ignoresSafeArea())
+        .navigationTitle("About You")
+        .navigationBarTitleDisplayMode(.large)
+        .task { await loadProfile() }
+        .alert("Edit Name", isPresented: $showingNameEdit) {
+            TextField("Display name", text: $editingName)
+            Button("Save") {
+                let trimmed = editingName.trimmingCharacters(in: .whitespaces)
+                if !trimmed.isEmpty {
+                    Task { try? await authService.updateProfile(displayName: trimmed) }
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        }
+        .sheet(item: $editingField) { field in
+            let current: String? = {
+                switch field {
+                case .workingStyle: return workingStyle
+                case .homeArea:     return homeArea
+                case .workArea:     return workArea
+                }
+            }()
+            ProfileFieldPickerSheet(field: field, currentValue: current) { newValue in
+                save(field: field, newValue: newValue)
+            }
+        }
+        .alert("Couldn't Save", isPresented: Binding(
+            get: { saveError != nil },
+            set: { if !$0 { saveError = nil } }
+        )) {
+            Button("OK") { saveError = nil }
+        } message: {
+            Text(saveError ?? "")
+        }
+    }
+
+    private func profileFieldRow(_ field: ProfileField) -> some View {
+        Button { editingField = field } label: {
+            HStack {
+                Label {
+                    Text(field.question)
+                        .font(.dmSans(14, weight: .bold))
+                        .foregroundStyle(Color.brandPrimary)
+                } icon: {
+                    GlassIcon(systemName: field.systemImage, color: field.iconColor)
+                }
+                Spacer()
+                if isLoadingProfile {
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .fill(Color.brandPrimary.opacity(0.15))
+                        .frame(width: 60, height: 12)
+                } else {
+                    let value: String? = {
+                        switch field {
+                        case .workingStyle: return workingStyle
+                        case .homeArea:     return homeArea
+                        case .workArea:     return workArea
+                        }
+                    }()
+                    Text(value ?? "–")
+                        .font(.dmSans(13))
+                        .foregroundStyle(Color.brandPrimary.opacity(value != nil ? 0.5 : 0.3))
+                }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Color.brandPrimary.opacity(0.25))
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(isLoadingProfile)
+    }
+
+    private func loadProfile() async {
+        guard let session = authService.session else {
+            isLoadingProfile = false
+            return
+        }
+        if let profile = try? await UserProfileAPIClient.fetchProfile(
+            userId: session.user.id.uuidString,
+            token: session.accessToken
+        ) {
+            workingStyle = profile.workingStyle
+            homeArea     = profile.homeArea
+            workArea     = profile.workArea
+        }
+        isLoadingProfile = false
+    }
+
+    private func save(field: ProfileField, newValue: String) {
+        let oldValue: String? = {
+            switch field {
+            case .workingStyle: return workingStyle
+            case .homeArea:     return homeArea
+            case .workArea:     return workArea
+            }
+        }()
+        switch field {
+        case .workingStyle: workingStyle = newValue
+        case .homeArea:     homeArea = newValue
+        case .workArea:     workArea = newValue
+        }
+        editingField = nil
+        Task {
+            do {
+                guard let session = authService.session else { return }
+                try await UserProfileAPIClient.saveProfile(
+                    userId: session.user.id.uuidString,
+                    token: session.accessToken,
+                    workingStyle: field == .workingStyle ? newValue : nil,
+                    homeArea:     field == .homeArea     ? newValue : nil,
+                    workArea:     field == .workArea     ? newValue : nil
+                )
+            } catch {
+                switch field {
+                case .workingStyle: workingStyle = oldValue
+                case .homeArea:     homeArea = oldValue
+                case .workArea:     workArea = oldValue
+                }
+                saveError = error.localizedDescription
+            }
+        }
+    }
+}
+
+// MARK: - Preferences
+
+private struct PreferencesView: View {
+    @Environment(AuthService.self) var authService
+    @AppStorage("appTheme") private var appTheme = "system"
+    @AppStorage("mapStyle") private var mapStyle = "standard"
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                GlassCard {
+                    Toggle(isOn: Binding(
+                        get: { authService.emailOptIn },
+                        set: { newValue in
+                            authService.emailOptIn = newValue
+                            Task { try? await authService.updateProfile(emailOptIn: newValue) }
+                        }
+                    )) {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Email Updates")
+                                    .font(.dmSans(14, weight: .bold))
+                                    .foregroundStyle(Color.brandPrimary)
+                                Text("New spots and local tips")
+                                    .font(.dmSans(12))
+                                    .foregroundStyle(Color.brandPrimary.opacity(0.5))
+                            }
+                        } icon: {
+                            GlassIcon(systemName: "envelope.fill", color: .brandPrimary)
+                        }
+                    }
+                    .tint(Color.brandPrimary)
+                }
+
+                GlassCard(header: "App Theme") {
+                    Label {
+                        Picker("App Theme", selection: $appTheme) {
+                            Text("System").tag("system")
+                            Text("Light").tag("light")
+                            Text("Dark").tag("dark")
+                        }
+                        .pickerStyle(.segmented)
+                    } icon: {
+                        GlassIcon(systemName: "circle.lefthalf.filled", color: Color(hex: "5E6AD2"))
+                    }
+                }
+
+                GlassCard(header: "Map Style") {
+                    Label {
+                        Picker("Map Style", selection: $mapStyle) {
+                            Text("Standard").tag("standard")
+                            Text("Hybrid").tag("hybrid")
+                        }
+                        .pickerStyle(.segmented)
+                    } icon: {
+                        GlassIcon(systemName: "map.fill", color: Color.brandPrimary)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
+        }
+        .background(Color.brandSecondary.ignoresSafeArea())
+        .navigationTitle("Preferences")
+        .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+// MARK: - About
+
+private struct AboutAppView: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                GlassCard {
+                    LabeledContent {
+                        Text("1.0.0")
+                            .font(.dmSans(13, weight: .bold))
+                            .foregroundStyle(Color.brandPrimary.opacity(0.5))
+                    } label: {
+                        Label {
+                            Text("Version")
+                                .font(.dmSans(14, weight: .bold))
+                                .foregroundStyle(Color.brandPrimary)
+                        } icon: {
+                            GlassIcon(systemName: "info.circle.fill", color: Color(hex: "5E6AD2"))
+                        }
+                    }
+
+                    Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+
+                    Link(destination: URL(string: "https://qwip.co.uk/privacy-policy")!) {
+                        HStack {
+                            Label {
+                                Text("Privacy Policy")
+                                    .font(.dmSans(14, weight: .bold))
+                                    .foregroundStyle(Color.brandPrimary)
+                            } icon: {
+                                GlassIcon(systemName: "lock.shield.fill", color: Color(hex: "34C759"))
+                            }
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color.brandPrimary.opacity(0.25))
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
+        }
+        .background(Color.brandSecondary.ignoresSafeArea())
+        .navigationTitle("About")
+        .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+// MARK: - My Account
+
+private struct MyAccountView: View {
+    @Environment(AuthService.self) var authService
+    @Environment(\.signOut) var signOut
+    @State private var showingDeleteConfirmation = false
+    @State private var isDeleting = false
+    @State private var deleteError: String? = nil
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                GlassCard {
+                    Button { signOut() } label: {
+                        HStack {
+                            Label {
+                                Text("Sign Out")
+                                    .font(.dmSans(14, weight: .bold))
+                                    .foregroundStyle(Color.brandPrimary)
+                            } icon: {
+                                GlassIcon(systemName: "rectangle.portrait.and.arrow.right", color: Color(hex: "FF9500"))
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color.brandPrimary.opacity(0.25))
+                        }
+                    }
+                    .buttonStyle(.plain)
+
+                    Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        HStack {
+                            Label {
+                                Text("Delete Account")
+                                    .font(.dmSans(14, weight: .bold))
+                            } icon: {
+                                GlassIcon(systemName: "trash.fill", color: Color(hex: "FF3B30"))
+                            }
+                            Spacer()
+                            if isDeleting {
+                                ProgressView().scaleEffect(0.8).tint(Color.brandPrimary.opacity(0.4))
+                            } else {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(Color.brandPrimary.opacity(0.25))
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isDeleting)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
+        }
+        .background(Color.brandSecondary.ignoresSafeArea())
+        .navigationTitle("My Account")
+        .navigationBarTitleDisplayMode(.large)
+        .confirmationDialog("Delete Account?", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
+            Button("Delete Account", role: .destructive) {
+                isDeleting = true
+                Task {
+                    do {
+                        try await authService.deleteAccount()
+                    } catch {
+                        deleteError = error.localizedDescription
+                    }
+                    isDeleting = false
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This will permanently delete your account and all saved spots. This action cannot be undone.")
+        }
+        .alert("Couldn't Delete Account", isPresented: Binding(
+            get: { deleteError != nil },
+            set: { if !$0 { deleteError = nil } }
+        )) {
+            Button("OK") { deleteError = nil }
+        } message: {
+            Text(deleteError ?? "")
+        }
+    }
+}
+
+// MARK: - Glass Card
 
 private struct GlassCard<Content: View>: View {
     var header: String? = nil
@@ -245,11 +544,9 @@ private struct BigStatCard: View {
             Image(systemName: icon)
                 .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(iconColor)
-
             Text(value)
                 .font(.dmSans(36, weight: .black))
                 .foregroundStyle(Color.brandPrimary)
-
             Text(label.uppercased())
                 .font(.dmSans(9, weight: .black))
                 .tracking(0.7)
@@ -279,5 +576,74 @@ private struct GlassIcon: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.white)
         }
+    }
+}
+
+// MARK: - Profile Field Picker Sheet
+
+private struct ProfileFieldPickerSheet: View {
+    let field: ProfileField
+    let currentValue: String?
+    var onSave: (String) -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 0) {
+                    VStack(spacing: 0) {
+                        ForEach(Array(field.options.enumerated()), id: \.offset) { index, option in
+                            if index > 0 {
+                                Divider().overlay(Color.brandPrimary.opacity(0.07))
+                            }
+                            optionRow(option)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                    .background(glassBackground(cornerRadius: 20))
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .shadow(color: Color.brandPrimary.opacity(0.08), radius: 24, x: 0, y: 8)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 24)
+                }
+                .padding(.bottom, 40)
+            }
+            .background(Color.brandSecondary.ignoresSafeArea())
+            .navigationTitle(field.question)
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func optionRow(_ option: String) -> some View {
+        let selected = currentValue == option
+        return Button {
+            guard !selected else { return }
+            onSave(option)
+        } label: {
+            HStack {
+                Text(option)
+                    .font(.dmSans(14, weight: .semibold))
+                    .foregroundStyle(Color.brandPrimary)
+                Spacer()
+                ZStack {
+                    Circle()
+                        .stroke(Color.brandPrimary.opacity(selected ? 0 : 0.2), lineWidth: 1.5)
+                        .frame(width: 22, height: 22)
+                    if selected {
+                        Circle()
+                            .fill(Color.brandPrimary)
+                            .frame(width: 22, height: 22)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Color.brandSecondary)
+                    }
+                }
+                .contentTransition(.symbolEffect(.replace))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(selected ? Color.brandPrimary.opacity(0.05) : Color.clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
