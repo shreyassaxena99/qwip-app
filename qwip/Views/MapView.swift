@@ -423,6 +423,42 @@ struct MapView: View {
             .fill(Color.brandPrimary.opacity(0.12))
             .frame(width: 1, height: 32)
     }
+
+    private func snapToUserLocation() {
+        guard let location = locationService.userLocation else { return }
+        withAnimation(.easeInOut(duration: 0.8)) {
+            position = .region(MKCoordinateRegion(
+                center: location.coordinate,
+                latitudinalMeters: 500,
+                longitudinalMeters: 500
+            ))
+        }
+    }
+
+    private func toggle3D() {
+        is3DEnabled.toggle()
+        guard let cam = currentCamera else { return }
+        withAnimation(.easeInOut(duration: 0.6)) {
+            position = .camera(MapCamera(
+                centerCoordinate: cam.centerCoordinate,
+                distance: cam.distance,
+                heading: cam.heading,
+                pitch: is3DEnabled ? 45 : 0
+            ))
+        }
+    }
+
+    private func resetNorth() {
+        guard let cam = currentCamera else { return }
+        withAnimation(.easeInOut(duration: 0.5)) {
+            position = .camera(MapCamera(
+                centerCoordinate: cam.centerCoordinate,
+                distance: cam.distance,
+                heading: 0,
+                pitch: cam.pitch
+            ))
+        }
+    }
 }
 
 // MARK: - Cluster Annotation
