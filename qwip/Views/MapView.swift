@@ -196,7 +196,9 @@ struct MapView: View {
             }
         }
         .onMapCameraChange(frequency: .continuous) { context in
-            mapHeading = context.camera.heading
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                mapHeading = context.camera.heading
+            }
         }
         .ignoresSafeArea()
         .onTapGesture {
@@ -313,6 +315,7 @@ struct MapView: View {
                                 Image(systemName: "safari")
                                     .font(.system(size: 18, weight: .regular))
                                     .foregroundStyle(Color.primary)
+                                    // Counter-rotate by heading so the needle always points to geographic north
                                     .rotationEffect(.degrees(-mapHeading))
                                     .frame(width: 36, height: 36)
                             }
@@ -323,7 +326,6 @@ struct MapView: View {
                     .padding(5)
                 }
                 .glassEffect(in: .roundedRectangle(cornerRadius: 16))
-                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: abs(mapHeading) > 0.5)
                 .padding(.trailing, 11)
             }
             Spacer()
@@ -507,14 +509,15 @@ struct MapView: View {
     }
 
     private func toggle3D() {
-        is3DEnabled.toggle()
+        let enabling = !is3DEnabled
+        is3DEnabled = enabling
         guard let cam = currentCamera else { return }
         withAnimation(.easeInOut(duration: 0.6)) {
             position = .camera(MapCamera(
                 centerCoordinate: cam.centerCoordinate,
                 distance: cam.distance,
                 heading: cam.heading,
-                pitch: is3DEnabled ? 45 : 0
+                pitch: enabling ? 45 : 0
             ))
         }
     }
