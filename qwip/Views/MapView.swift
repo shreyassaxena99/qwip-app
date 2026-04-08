@@ -330,7 +330,7 @@ struct MapView: View {
                     }
                     .padding(5)
                 }
-                .glassEffect(in: .roundedRectangle(cornerRadius: 16))
+                .glassEffect(in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .padding(.trailing, 11)
             }
             Spacer()
