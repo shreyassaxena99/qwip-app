@@ -100,6 +100,7 @@ struct MapView: View {
         ZStack(alignment: .top) {
             mapLayer
             filterBarOverlay
+            mapControlsOverlay
             selectedSpotPreview
             if store.isLoading && store.spots.isEmpty {
                 loadingOverlay
@@ -180,7 +181,7 @@ struct MapView: View {
             }
         }
         .mapStyle(.standard(
-            elevation: .flat,
+            elevation: is3DEnabled ? .realistic : .flat,
             emphasis: .muted,
             pointsOfInterest: .excludingAll,
             showsTraffic: false
@@ -258,6 +259,76 @@ struct MapView: View {
         .glassEffect(in: .capsule)
         .padding(.horizontal, 16)
         .padding(.top, 10)
+    }
+
+    // MARK: - Map Controls
+
+    private var mapControlsOverlay: some View {
+        VStack {
+            HStack {
+                Spacer()
+                GlassEffectContainer(spacing: 0) {
+                    VStack(spacing: 0) {
+                        // Location button
+                        Button(action: snapToUserLocation) {
+                            Image("ic_navigation")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 17, height: 17)
+                                .foregroundStyle(Color.primary)
+                                .frame(width: 36, height: 36)
+                        }
+                        .buttonStyle(.plain)
+
+                        Rectangle()
+                            .fill(Color.primary.opacity(0.12))
+                            .frame(width: 22, height: 1)
+
+                        // 3D toggle button
+                        Button(action: toggle3D) {
+                            Image("ic_box")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 17, height: 17)
+                                .foregroundStyle(is3DEnabled ? Color.brandSecondary : Color.primary)
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .fill(is3DEnabled ? Color.brandPrimary : Color.clear)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: is3DEnabled)
+
+                        // Compass — only visible when map is rotated from north
+                        if abs(mapHeading) > 0.5 {
+                            Rectangle()
+                                .fill(Color.primary.opacity(0.12))
+                                .frame(width: 22, height: 1)
+                                .transition(.opacity)
+
+                            Button(action: resetNorth) {
+                                Image(systemName: "safari")
+                                    .font(.system(size: 18, weight: .regular))
+                                    .foregroundStyle(Color.primary)
+                                    .rotationEffect(.degrees(-mapHeading))
+                                    .frame(width: 36, height: 36)
+                            }
+                            .buttonStyle(.plain)
+                            .transition(.scale(scale: 0.5).combined(with: .opacity))
+                        }
+                    }
+                    .padding(5)
+                }
+                .glassEffect(in: .roundedRectangle(cornerRadius: 16))
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: abs(mapHeading) > 0.5)
+                .padding(.trailing, 11)
+            }
+            Spacer()
+        }
+        .padding(.top, 54)
     }
 
     // MARK: - Selected Spot Preview
