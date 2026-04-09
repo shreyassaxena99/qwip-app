@@ -1,6 +1,22 @@
 import SwiftUI
 
 struct ContentView: View {
+    init() {
+        // iOS 26's glass pill renders selected icons with a cutout/glass effect that
+        // blends into the pill background. Override selected icon + title color explicitly
+        // using UITabBarItemAppearance — without calling configureWithDefaultBackground(),
+        // which would replace the glass with a solid material.
+        let item = UITabBarItemAppearance(style: .stacked)
+        item.selected.iconColor = .label
+        item.selected.titleTextAttributes = [.foregroundColor: UIColor.label]
+
+        let appearance = UITabBarAppearance()
+        // No configureWith... call — backgroundEffect stays nil (system default = glass in iOS 26)
+        appearance.stackedLayoutAppearance = item
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
+
     @State private var store = SpotStore()
     @State private var locationService = LocationService()
     @State private var savedSpotService = SavedSpotService()
@@ -22,7 +38,6 @@ struct ContentView: View {
                 ProfileView()
             }
         }
-        .tint(.primary)
         .preferredColorScheme(appTheme == "dark" ? .dark : appTheme == "light" ? .light : nil)
         .environment(store)
         .environment(locationService)
