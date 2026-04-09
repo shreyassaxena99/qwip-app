@@ -39,8 +39,11 @@ struct SpotCard: View {
                                 .stroke(Color.brandPrimary.opacity(0.15), lineWidth: 1)
                         )
                         .frame(width: 38, height: 38)
-                    Image(systemName: spot.category.systemIcon)
-                        .font(.system(size: 17, weight: .semibold))
+                    Image(spot.category.iconName)
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 17, height: 17)
                         .foregroundStyle(Color.brandPrimary)
                 }
 
@@ -53,8 +56,11 @@ struct SpotCard: View {
 
                 // Rating
                 HStack(spacing: 2) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 9))
+                    Image("ic_star")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 9, height: 9)
                         .foregroundStyle(.orange)
                     Text(spot.formattedRating)
                         .font(.dmSans(18, weight: .black))
@@ -88,8 +94,11 @@ struct SpotRow: View {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color.brandPrimary)
                     .frame(width: 52, height: 52)
-                Image(systemName: spot.category.systemIcon)
-                    .font(.system(size: 22, weight: .semibold))
+                Image(spot.category.iconName)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
                     .foregroundStyle(Color.brandSecondary)
             }
             .shadow(color: Color.brandPrimary.opacity(0.35), radius: 8, x: 0, y: 3)
@@ -103,8 +112,11 @@ struct SpotRow: View {
                     OpenBadge(isOpen: spot.isOpenNow)
                 }
                 HStack(spacing: 4) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 9))
+                    Image("ic_star")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 9, height: 9)
                         .foregroundStyle(.orange)
                     Text(spot.formattedRating)
                         .font(.dmSans(12, weight: .bold))
@@ -126,8 +138,11 @@ struct SpotRow: View {
                 }
             }
 
-            Image(systemName: "chevron.right")
-                .font(.system(size: 11, weight: .bold))
+            Image("ic_chevron_right")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 11, height: 11)
                 .foregroundStyle(Color.brandPrimary.opacity(0.25))
         }
         .padding(.vertical, 4)
@@ -194,8 +209,11 @@ struct SpotAnnotationView: View {
                             )
                     )
 
-                Image(systemName: spot.category.systemIcon)
-                    .font(.system(size: isSelected ? 18 : 14, weight: .bold))
+                Image(spot.category.iconName)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: isSelected ? 18 : 14, height: isSelected ? 18 : 14)
                     .foregroundStyle(isSelected ? Color.brandPrimary : Color.brandSecondary)
             }
             PinPoint()
@@ -259,8 +277,11 @@ struct SavedSpotCard: View {
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(Color.brandPrimary)
                             .frame(width: 36, height: 36)
-                        Image(systemName: spot.category.systemIcon)
-                            .font(.system(size: 16, weight: .semibold))
+                        Image(spot.category.iconName)
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 16, height: 16)
                             .foregroundStyle(Color.brandSecondary)
                     }
                     .shadow(color: Color.brandPrimary.opacity(0.35), radius: 6, x: 0, y: 2)
@@ -280,8 +301,11 @@ struct SavedSpotCard: View {
                     .foregroundStyle(Color.brandPrimary.opacity(0.4))
 
                 HStack(spacing: 4) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 9))
+                    Image("ic_star")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 9, height: 9)
                         .foregroundStyle(.orange)
                     Text(spot.formattedRating)
                         .font(.dmSans(13, weight: .black))
