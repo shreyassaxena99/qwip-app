@@ -664,7 +664,6 @@ private struct ProfileFieldPickerSheet: View {
                             .foregroundStyle(Color.brandSecondary)
                     }
                 }
-                .contentTransition(.symbolEffect(.replace))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
