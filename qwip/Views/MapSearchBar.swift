@@ -87,9 +87,7 @@ struct MapSearchBar: View {
 
             Button("Cancel") {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                    searchViewModel.isExpanded = false
-                    searchViewModel.query = ""
-                    searchViewModel.results = []
+                    searchViewModel.clearSearch()
                 }
             }
             .font(.dmSans(14, weight: .semibold))
