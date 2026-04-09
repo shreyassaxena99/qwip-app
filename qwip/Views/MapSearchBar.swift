@@ -155,9 +155,12 @@ struct SearchResultsCard: View {
 
 struct RadiusPickerCard: View {
     @Environment(SearchViewModel.self) var searchViewModel
+    @State private var sliderIndex: Double = 0
+
+    private let options = SearchViewModel.radiusOptions
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             if let place = searchViewModel.selectedPlace {
                 Text("Spots near \(place.name)")
                     .font(.dmSans(12, weight: .bold))
@@ -166,27 +169,34 @@ struct RadiusPickerCard: View {
                     .padding(.horizontal, 16)
             }
 
-            HStack(spacing: 8) {
-                ForEach(SearchViewModel.radiusOptions, id: \.metres) { option in
-                    Button {
+            VStack(spacing: 4) {
+                Slider(value: $sliderIndex, in: 0...Double(options.count - 1), step: 1) { isEditing in
+                    if !isEditing {
+                        let index = Int(sliderIndex.rounded())
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            searchViewModel.selectRadius(option.metres)
+                            searchViewModel.selectRadius(options[index].metres)
                         }
-                    } label: {
-                        Text(option.label)
-                            .font(.dmSans(13, weight: .bold))
-                            .foregroundStyle(Color.primary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(Color.primary.opacity(0.08))
-                            )
                     }
-                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal, 16)
+
+                // Discrete stop labels — one per step, aligned under each snap position
+                HStack(spacing: 0) {
+                    ForEach(Array(options.enumerated()), id: \.offset) { index, option in
+                        Text(option.label)
+                            .font(.dmSans(10, weight: .semibold))
+                            .foregroundStyle(
+                                Int(sliderIndex.rounded()) == index
+                                    ? Color.primary
+                                    : Color.primary.opacity(0.35)
+                            )
+                            .frame(maxWidth: .infinity)
+                            .multilineTextAlignment(.center)
+                            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: sliderIndex)
+                    }
+                }
+                .padding(.horizontal, 8)
             }
-            .padding(.horizontal, 12)
         }
         .padding(.vertical, 14)
         .background(.ultraThinMaterial)
