@@ -6,120 +6,44 @@ struct ContentView: View {
     @State private var savedSpotService = SavedSpotService()
     @State private var collectionService = CollectionService()
     @State private var selectedTab = 0
+    @State private var searchViewModel = SearchViewModel()
     @Environment(AppRouter.self) var appRouter
+    @AppStorage("appTheme") private var appTheme = "system"
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Group {
-                switch selectedTab {
-                case 0: MapView()
-                case 1: CollectionsView()
-                default: ProfileView()
-                }
+        TabView(selection: $selectedTab) {
+            Tab("Map", systemImage: "map.fill", value: 0) {
+                MapView()
             }
-            .environment(store)
-            .environment(locationService)
-            .environment(savedSpotService)
-            .environment(collectionService)
-
-            GlassTabBar(selectedTab: $selectedTab)
+            Tab("Saved", systemImage: "heart.fill", value: 1) {
+                CollectionsView()
+            }
+            Tab("Profile", systemImage: "person.fill", value: 2) {
+                ProfileView()
+            }
         }
-        .ignoresSafeArea(edges: .bottom)
+        .preferredColorScheme(appTheme == "dark" ? .dark : appTheme == "light" ? .light : nil)
+        .tint(Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0xC9/255, green: 0xB8/255, blue: 0xE0/255, alpha: 1)
+                : UIColor(red: 0x1F/255, green: 0x3D/255, blue: 0x32/255, alpha: 1)
+        }))
+        .environment(store)
+        .environment(locationService)
+        .environment(savedSpotService)
+        .environment(collectionService)
+        .environment(searchViewModel)
         .task {
             async let s: () = savedSpotService.load()
             async let c: () = collectionService.load()
             _ = await (s, c)
         }
         .onChange(of: appRouter.pendingCollectionId) { _, id in
-            if id != nil {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
-                    selectedTab = 1
-                }
-            }
+            if id != nil { selectedTab = 1 }
         }
-    }
-}
-
-// MARK: - Floating Glass Tab Bar
-
-private struct GlassTabBar: View {
-    @Binding var selectedTab: Int
-
-    var body: some View {
-        HStack(spacing: 4) {
-            TabPill(icon: "map.fill", label: "Map", isSelected: selectedTab == 0) {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
-                    selectedTab = 0
-                }
-            }
-            TabPill(icon: "heart.fill", label: "Saved", isSelected: selectedTab == 1) {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
-                    selectedTab = 1
-                }
-            }
-            TabPill(icon: "person.fill", label: "Profile", isSelected: selectedTab == 2) {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
-                    selectedTab = 2
-                }
-            }
+        .onChange(of: searchViewModel.selectedRadius) { _, radius in
+            if radius != nil { selectedTab = 0 }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 8)
-        .background(
-            Capsule()
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    Capsule()
-                        .fill(Color.brandPrimary.opacity(0.04))
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(
-                            LinearGradient(
-                                colors: [Color.brandPrimary.opacity(0.22), Color.brandPrimary.opacity(0.07)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.5
-                        )
-                )
-                .shadow(color: Color.brandPrimary.opacity(0.15), radius: 24, x: 0, y: 8)
-                .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 2)
-        )
-        .clipShape(Capsule())
-        .padding(.horizontal, 48)
-        .padding(.bottom, 28)
-    }
-}
-
-private struct TabPill: View {
-    let icon: String
-    let label: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 14, weight: .bold))
-                if isSelected {
-                    Text(label)
-                        .font(.dmSans(12, weight: .black))
-                        .tracking(0.2)
-                        .transition(.scale(scale: 0.8).combined(with: .opacity))
-                }
-            }
-            .foregroundStyle(isSelected ? Color.brandSecondary : Color.brandPrimary.opacity(0.45))
-            .padding(.horizontal, isSelected ? 18 : 14)
-            .padding(.vertical, 10)
-            .background(
-                Capsule()
-                    .fill(isSelected ? Color.brandPrimary : Color.clear)
-                    .shadow(color: isSelected ? Color.brandPrimary.opacity(0.35) : .clear, radius: 8, x: 0, y: 3)
-            )
-        }
-        .buttonStyle(.plain)
     }
 }
 
