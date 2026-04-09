@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 struct ContentView: View {
     init() {
@@ -37,11 +36,6 @@ struct ContentView: View {
             }
         }
         .preferredColorScheme(appTheme == "dark" ? .dark : appTheme == "light" ? .light : nil)
-        .tint(Color(uiColor: UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 0xC9/255, green: 0xB8/255, blue: 0xE0/255, alpha: 1)
-                : UIColor(red: 0x1F/255, green: 0x3D/255, blue: 0x32/255, alpha: 1)
-        }))
         .environment(store)
         .environment(locationService)
         .environment(savedSpotService)
