@@ -25,11 +25,11 @@ private enum ProfileField: Identifiable {
         }
     }
 
-    var systemImage: String {
+    var iconName: String {
         switch self {
-        case .workingStyle: return "briefcase.fill"
-        case .homeArea:     return "house.fill"
-        case .workArea:     return "building.2.fill"
+        case .workingStyle: return "ic_briefcase"
+        case .homeArea:     return "ic_house"
+        case .workArea:     return "ic_building_2"
         }
     }
 
@@ -65,26 +65,26 @@ struct ProfileView: View {
                         BigStatCard(
                             value: "\(savedSpotService.savedEntries.count)",
                             label: "Saved Spots",
-                            icon: "heart.fill",
+                            icon: "ic_heart",
                             iconColor: Color(hex: "e74c3c")
                         )
                         BigStatCard(
                             value: "\(store.spots.count)",
                             label: "Spots Nearby",
-                            icon: "mappin.circle.fill",
+                            icon: "ic_map_pin",
                             iconColor: Color.brandPrimary
                         )
                     }
 
                     // Menu
                     GlassCard {
-                        menuRow("About You",   icon: "person.fill",             color: Color.brandPrimary,   dest: .aboutYou)
+                        menuRow("About You",   icon: "ic_user",        color: Color.brandPrimary,   dest: .aboutYou)
                         Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
-                        menuRow("Preferences", icon: "gearshape.fill",          color: Color(hex: "5E6AD2"), dest: .preferences)
+                        menuRow("Preferences", icon: "ic_settings",     color: Color(hex: "5E6AD2"), dest: .preferences)
                         Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
-                        menuRow("About",       icon: "info.circle.fill",        color: Color(hex: "34C759"), dest: .about)
+                        menuRow("About",       icon: "ic_info",         color: Color(hex: "34C759"), dest: .about)
                         Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
-                        menuRow("My Account",  icon: "person.crop.circle.fill", color: Color(hex: "FF9500"), dest: .myAccount)
+                        menuRow("My Account",  icon: "ic_circle_user",  color: Color(hex: "FF9500"), dest: .myAccount)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -107,13 +107,16 @@ struct ProfileView: View {
     private func menuRow(_ title: String, icon: String, color: Color, dest: ProfileDestination) -> some View {
         NavigationLink(value: dest) {
             HStack(spacing: 12) {
-                GlassIcon(systemName: icon, color: color)
+                GlassIcon(iconName: icon, color: color)
                 Text(title)
                     .font(.dmSans(14, weight: .semibold))
                     .foregroundStyle(Color.brandPrimary)
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
+                Image("ic_chevron_right")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 11, height: 11)
                     .foregroundStyle(Color.brandPrimary.opacity(0.25))
             }
             .contentShape(Rectangle())
@@ -149,14 +152,17 @@ private struct AboutYouView: View {
                                     .font(.dmSans(14, weight: .bold))
                                     .foregroundStyle(Color.brandPrimary)
                             } icon: {
-                                GlassIcon(systemName: "person.fill", color: Color(hex: "5E6AD2"))
+                                GlassIcon(iconName: "ic_user", color: Color(hex: "5E6AD2"))
                             }
                             Spacer()
                             Text(authService.displayName ?? "–")
                                 .font(.dmSans(13))
                                 .foregroundStyle(Color.brandPrimary.opacity(authService.displayName != nil ? 0.5 : 0.3))
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 11, weight: .bold))
+                            Image("ic_chevron_right")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 11, height: 11)
                                 .foregroundStyle(Color.brandPrimary.opacity(0.25))
                         }
                     }
@@ -217,7 +223,7 @@ private struct AboutYouView: View {
                         .font(.dmSans(14, weight: .bold))
                         .foregroundStyle(Color.brandPrimary)
                 } icon: {
-                    GlassIcon(systemName: field.systemImage, color: field.iconColor)
+                    GlassIcon(iconName: field.iconName, color: field.iconColor)
                 }
                 Spacer()
                 if isLoadingProfile {
@@ -236,8 +242,11 @@ private struct AboutYouView: View {
                         .font(.dmSans(13))
                         .foregroundStyle(Color.brandPrimary.opacity(value != nil ? 0.5 : 0.3))
                 }
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
+                Image("ic_chevron_right")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 11, height: 11)
                     .foregroundStyle(Color.brandPrimary.opacity(0.25))
             }
         }
@@ -325,7 +334,7 @@ private struct PreferencesView: View {
                                     .foregroundStyle(Color.brandPrimary.opacity(0.5))
                             }
                         } icon: {
-                            GlassIcon(systemName: "envelope.fill", color: .brandPrimary)
+                            GlassIcon(iconName: "ic_mail", color: .brandPrimary)
                         }
                     }
                     .tint(Color.brandPrimary)
@@ -340,7 +349,7 @@ private struct PreferencesView: View {
                         }
                         .pickerStyle(.segmented)
                     } icon: {
-                        GlassIcon(systemName: "circle.lefthalf.filled", color: Color(hex: "5E6AD2"))
+                        GlassIcon(iconName: "ic_sun_moon", color: Color(hex: "5E6AD2"))
                     }
                 }
 
@@ -352,7 +361,7 @@ private struct PreferencesView: View {
                         }
                         .pickerStyle(.segmented)
                     } icon: {
-                        GlassIcon(systemName: "map.fill", color: Color.brandPrimary)
+                        GlassIcon(iconName: "ic_map", color: Color.brandPrimary)
                     }
                 }
             }
@@ -382,7 +391,7 @@ private struct AboutAppView: View {
                                 .font(.dmSans(14, weight: .bold))
                                 .foregroundStyle(Color.brandPrimary)
                         } icon: {
-                            GlassIcon(systemName: "info.circle.fill", color: Color(hex: "5E6AD2"))
+                            GlassIcon(iconName: "ic_info", color: Color(hex: "5E6AD2"))
                         }
                     }
 
@@ -395,11 +404,14 @@ private struct AboutAppView: View {
                                     .font(.dmSans(14, weight: .bold))
                                     .foregroundStyle(Color.brandPrimary)
                             } icon: {
-                                GlassIcon(systemName: "lock.shield.fill", color: Color(hex: "34C759"))
+                                GlassIcon(iconName: "ic_shield_check", color: Color(hex: "34C759"))
                             }
                             Spacer()
-                            Image(systemName: "arrow.up.right")
-                                .font(.system(size: 11, weight: .bold))
+                            Image("ic_arrow_up_right")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 11, height: 11)
                                 .foregroundStyle(Color.brandPrimary.opacity(0.25))
                         }
                     }
@@ -434,11 +446,14 @@ private struct MyAccountView: View {
                                     .font(.dmSans(14, weight: .bold))
                                     .foregroundStyle(Color.brandPrimary)
                             } icon: {
-                                GlassIcon(systemName: "rectangle.portrait.and.arrow.right", color: Color(hex: "FF9500"))
+                                GlassIcon(iconName: "ic_log_out", color: Color(hex: "FF9500"))
                             }
                             Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 11, weight: .bold))
+                            Image("ic_chevron_right")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 11, height: 11)
                                 .foregroundStyle(Color.brandPrimary.opacity(0.25))
                         }
                     }
@@ -454,14 +469,17 @@ private struct MyAccountView: View {
                                 Text("Delete Account")
                                     .font(.dmSans(14, weight: .bold))
                             } icon: {
-                                GlassIcon(systemName: "trash.fill", color: Color(hex: "FF3B30"))
+                                GlassIcon(iconName: "ic_trash_2", color: Color(hex: "FF3B30"))
                             }
                             Spacer()
                             if isDeleting {
                                 ProgressView().scaleEffect(0.8).tint(Color.brandPrimary.opacity(0.4))
                             } else {
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 11, weight: .bold))
+                                Image("ic_chevron_right")
+                                    .renderingMode(.template)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 11, height: 11)
                                     .foregroundStyle(Color.brandPrimary.opacity(0.25))
                             }
                         }
@@ -541,8 +559,11 @@ private struct BigStatCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .bold))
+            Image(icon)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
                 .foregroundStyle(iconColor)
             Text(value)
                 .font(.dmSans(36, weight: .black))
@@ -564,7 +585,7 @@ private struct BigStatCard: View {
 // MARK: - Glass Icon
 
 private struct GlassIcon: View {
-    let systemName: String
+    let iconName: String
     let color: Color
 
     var body: some View {
@@ -572,8 +593,11 @@ private struct GlassIcon: View {
             RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .fill(color)
                 .frame(width: 28, height: 28)
-            Image(systemName: systemName)
-                .font(.system(size: 13, weight: .semibold))
+            Image(iconName)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 13, height: 13)
                 .foregroundStyle(.white)
         }
     }
@@ -632,8 +656,11 @@ private struct ProfileFieldPickerSheet: View {
                         Circle()
                             .fill(Color.brandPrimary)
                             .frame(width: 22, height: 22)
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 10, weight: .bold))
+                        Image("ic_check")
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 10, height: 10)
                             .foregroundStyle(Color.brandSecondary)
                     }
                 }
