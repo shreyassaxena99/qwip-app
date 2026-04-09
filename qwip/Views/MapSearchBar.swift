@@ -50,6 +50,7 @@ struct MapSearchBar: View {
                 .foregroundStyle(Color.primary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 9)
+                .contentShape(Capsule())
             }
             .buttonStyle(.plain)
             .glassEffect(in: .capsule)
