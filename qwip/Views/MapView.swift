@@ -13,6 +13,7 @@ struct MapView: View {
     @Environment(SpotStore.self) var store
     @Environment(LocationService.self) var locationService
     @Environment(SearchViewModel.self) var searchViewModel
+    @Environment(SavedSpotService.self) var savedSpotService
     @State private var position: MapCameraPosition = .region(
         MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 51.5220, longitude: -0.0950),
@@ -189,12 +190,29 @@ struct MapView: View {
                         Annotation("", coordinate: spot.coordinate, anchor: .bottom) {
                             SpotAnnotationView(spot: spot, isSelected: selectedSpot?.id == spot.id)
                                 .onTapGesture {
+                                    let isSelecting = selectedSpot?.id != spot.id
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                         if selectedSpot?.id == spot.id {
                                             selectedSpot = nil
                                         } else {
                                             selectedSpot = spot
                                             isFetchingDetail = false
+                                        }
+                                    }
+                                    if isSelecting {
+                                        if let cam = currentCamera {
+                                            withAnimation(.easeOut(duration: 0.5)) {
+                                                position = .camera(MapCamera(
+                                                    centerCoordinate: spot.coordinate,
+                                                    distance: cam.distance,
+                                                    heading: cam.heading,
+                                                    pitch: cam.pitch
+                                                ))
+                                            }
+                                        } else {
+                                            withAnimation(.easeOut(duration: 0.5)) {
+                                                position = .region(MKCoordinateRegion(center: spot.coordinate, span: mapSpan))
+                                            }
                                         }
                                     }
                                 }
@@ -291,7 +309,7 @@ struct MapView: View {
                         ForEach(SpotCategory.allCases) { category in
                             FilterPill(
                                 title: category.displayName,
-                                icon: category.systemIcon,
+                                icon: category.iconName,
                                 isActive: store.selectedCategory == category
                             ) {
                                 store.selectedCategory = (store.selectedCategory == category) ? nil : category
@@ -433,8 +451,11 @@ struct MapView: View {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .fill(Color.brandPrimary)
                             .frame(width: 50, height: 50)
-                        Image(systemName: spot.category.systemIcon)
-                            .font(.system(size: 22, weight: .semibold))
+                        Image(spot.category.iconName)
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 22, height: 22)
                             .foregroundStyle(Color.brandSecondary)
                     }
                     .shadow(color: Color.brandPrimary.opacity(0.4), radius: 8, x: 0, y: 3)
@@ -456,18 +477,43 @@ struct MapView: View {
                         }
                     }
                     Spacer()
-                    OpenBadge(isOpen: spot.isOpenNow)
+                    VStack(alignment: .trailing, spacing: 8) {
+                        OpenBadge(isOpen: spot.isOpenNow)
+                        Button {
+                            Task {
+                                if savedSpotService.isSaved(spot.id) {
+                                    try? await savedSpotService.unsave(spotId: spot.id)
+                                } else {
+                                    try? await savedSpotService.save(spot: spot)
+                                }
+                            }
+                        } label: {
+                            ZStack {
+                                Circle()
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(Circle().stroke(Color.brandPrimary.opacity(0.12), lineWidth: 1))
+                                    .frame(width: 32, height: 32)
+                                Image("ic_heart")
+                                    .renderingMode(.template)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 13, height: 13)
+                                    .foregroundStyle(savedSpotService.isSaved(spot.id) ? Color(hex: "e74c3c") : Color.brandPrimary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
 
                 HStack(spacing: 0) {
-                    statChip(icon: "star.fill", iconColor: .orange, value: spot.formattedRating, label: "RATING")
+                    statChip(icon: "ic_star", iconColor: .orange, value: spot.formattedRating, label: "RATING")
                     if let noise = spot.noiseMatrix?.currentLevel() {
                         dividerLine()
-                        statChip(icon: noise.systemIcon, iconColor: Color.brandPrimary, value: noise.displayName, label: "USUALLY")
+                        statChip(icon: noise.iconName, iconColor: Color.brandPrimary, value: noise.displayName, label: "USUALLY")
                     }
                     if spot.wifiAvailable {
                         dividerLine()
-                        statChip(icon: "wifi", iconColor: Color.brandPrimary, value: "Wi-Fi", label: "AVAIL")
+                        statChip(icon: "ic_wifi", iconColor: Color.brandPrimary, value: "Wi-Fi", label: "AVAIL")
                     }
                 }
                 .padding(.vertical, 10)
@@ -502,8 +548,11 @@ struct MapView: View {
                             Text("View Spot")
                                 .font(.dmSans(15, weight: .black))
                                 .tracking(0.3)
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 13, weight: .bold))
+                            Image("ic_arrow_right")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 13, height: 13)
                         }
                     }
                     .foregroundStyle(Color.brandSecondary)
@@ -547,8 +596,11 @@ struct MapView: View {
 
     private func statChip(icon: String, iconColor: Color, value: String, label: String) -> some View {
         VStack(spacing: 2) {
-            Image(systemName: icon)
-                .font(.system(size: 10, weight: .semibold))
+            Image(icon)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 10, height: 10)
                 .foregroundStyle(iconColor)
             Text(value)
                 .font(.dmSans(12, weight: .heavy))
@@ -725,7 +777,7 @@ private struct FiltersSheet: View {
                                 ForEach([NoiseLevel.quiet, .moderate, .lively], id: \.self) { level in
                                     NoisePill(
                                         label: level.displayName,
-                                        icon: level.systemIcon,
+                                        icon: level.iconName,
                                         isActive: store.filterNoiseLevel == level
                                     ) {
                                         withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
@@ -829,8 +881,11 @@ private struct NoisePill: View {
         Button(action: action) {
             HStack(spacing: 4) {
                 if let icon {
-                    Image(systemName: icon)
-                        .font(.system(size: 10, weight: .bold))
+                    Image(icon)
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 10, height: 10)
                 }
                 Text(label)
                     .font(.dmSans(12, weight: .bold))
@@ -879,8 +934,11 @@ struct FilterPill: View {
         Button(action: action) {
             HStack(spacing: 5) {
                 if let icon {
-                    Image(systemName: icon)
-                        .font(.system(size: 11, weight: .bold))
+                    Image(icon)
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 11, height: 11)
                 }
                 Text(title.uppercased())
                     .font(.dmSans(10, weight: .black))
