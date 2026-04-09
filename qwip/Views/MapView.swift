@@ -12,6 +12,7 @@ struct SpotCluster: Identifiable {
 struct MapView: View {
     @Environment(SpotStore.self) var store
     @Environment(LocationService.self) var locationService
+    @Environment(SearchViewModel.self) var searchViewModel
     @State private var position: MapCameraPosition = .region(
         MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 51.5220, longitude: -0.0950),
@@ -34,8 +35,20 @@ struct MapView: View {
     // Group spots into clusters based on current zoom level.
     // Radius scales with span so clusters break apart as you zoom in.
     private var clusters: [SpotCluster] {
+        // Apply search radius filter on top of store's category/preference filters
+        let source: [SpotPin]
+        if let place = searchViewModel.selectedPlace, let radiusMetres = searchViewModel.selectedRadius {
+            let placeLocation = CLLocation(latitude: place.coordinate.latitude, longitude: place.coordinate.longitude)
+            source = store.filteredSpots.filter { spot in
+                let spotLocation = CLLocation(latitude: spot.coordinate.latitude, longitude: spot.coordinate.longitude)
+                return spotLocation.distance(from: placeLocation) <= radiusMetres
+            }
+        } else {
+            source = store.filteredSpots
+        }
+
         let radius = mapSpan.latitudeDelta * 0.15
-        var remaining = store.filteredSpots
+        var remaining = source
         var result: [SpotCluster] = []
         while !remaining.isEmpty {
             let anchor = remaining.removeFirst()
@@ -106,6 +119,23 @@ struct MapView: View {
             if store.isLoading && store.spots.isEmpty {
                 loadingOverlay
             }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 0) {
+                if searchViewModel.isExpanded {
+                    if searchViewModel.selectedPlace != nil && searchViewModel.selectedRadius == nil {
+                        RadiusPickerCard()
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    } else if !searchViewModel.results.isEmpty {
+                        SearchResultsCard()
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                MapSearchBar()
+            }
+            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: searchViewModel.isExpanded)
+            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: searchViewModel.results.count)
+            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: searchViewModel.selectedPlace?.id)
         }
         .task {
             locationService.requestAuthorization()
@@ -180,6 +210,11 @@ struct MapView: View {
                     }
                 }
             }
+            if let place = searchViewModel.selectedPlace, let radius = searchViewModel.selectedRadius {
+                MapCircle(center: place.coordinate, radius: radius)
+                    .foregroundStyle(Color.brandPrimary.opacity(0.07))
+                    .stroke(Color.brandPrimary.opacity(0.35), lineWidth: 1.5)
+            }
         }
         .mapStyle(
             mapStylePreference == "hybrid"
@@ -209,6 +244,16 @@ struct MapView: View {
         .onTapGesture {
             withAnimation { selectedSpot = nil }
         }
+        .onChange(of: searchViewModel.selectedRadius) { _, radius in
+            guard let radius, let place = searchViewModel.selectedPlace else { return }
+            withAnimation(.easeInOut(duration: 0.8)) {
+                position = .region(MKCoordinateRegion(
+                    center: place.coordinate,
+                    latitudinalMeters: radius * 2.4,
+                    longitudinalMeters: radius * 2.4
+                ))
+            }
+        }
     }
 
     // MARK: - Filter Bar
@@ -218,6 +263,28 @@ struct MapView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 GlassEffectContainer(spacing: 6) {
                     HStack(spacing: 6) {
+                        if searchViewModel.selectedPlace != nil {
+                            Button {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    searchViewModel.clearSearch()
+                                    selectedSpot = nil
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 11, weight: .bold))
+                                    Text("Clear")
+                                        .font(.dmSans(10, weight: .black))
+                                        .tracking(0.5)
+                                }
+                                .foregroundStyle(Color.brandSecondary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Capsule().fill(Color.brandPrimary))
+                            }
+                            .buttonStyle(.plain)
+                            .transition(.scale.combined(with: .opacity))
+                        }
                         FilterPill(title: "All", isActive: store.selectedCategory == nil) {
                             store.selectedCategory = nil
                         }
@@ -472,7 +539,7 @@ struct MapView: View {
             .background(Color.brandPrimary.opacity(0.92))
             .clipShape(Capsule())
             .shadow(color: Color.brandPrimary.opacity(0.3), radius: 12, x: 0, y: 4)
-            .padding(.bottom, 110)
+            .padding(.bottom, 24)
         }
     }
 
