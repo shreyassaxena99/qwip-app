@@ -23,8 +23,8 @@ struct MapSearchBar: View {
                 collapsedContent
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, searchViewModel.isExpanded ? 14 : 12)
+        .padding(.vertical, searchViewModel.isExpanded ? 10 : 6)
         .onChange(of: searchViewModel.isExpanded) { _, expanded in
             searchFocused = expanded
         }
@@ -40,20 +40,14 @@ struct MapSearchBar: View {
                     searchViewModel.isExpanded = true
                 }
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 13, weight: .semibold))
-                    Text("Search")
-                        .font(.dmSans(11, weight: .black))
-                        .tracking(0.3)
-                }
-                .foregroundStyle(Color.primary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 9)
-                .contentShape(Capsule())
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Color.primary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .glassEffect(in: .capsule)
+            .glassEffect(in: .circle)
         }
     }
 
@@ -171,15 +165,8 @@ struct RadiusPickerCard: View {
             }
 
             VStack(spacing: 4) {
-                Slider(value: $sliderIndex, in: 0...Double(options.count - 1), step: 1) { isEditing in
-                    if !isEditing {
-                        let index = Int(sliderIndex.rounded())
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            searchViewModel.selectRadius(options[index].metres)
-                        }
-                    }
-                }
-                .padding(.horizontal, 16)
+                Slider(value: $sliderIndex, in: 0...Double(options.count - 1), step: 1)
+                    .padding(.horizontal, 16)
 
                 // Discrete stop labels — one per step, aligned under each snap position
                 HStack(spacing: 0) {
@@ -198,6 +185,24 @@ struct RadiusPickerCard: View {
                 }
                 .padding(.horizontal, 8)
             }
+
+            Button {
+                let index = Int(sliderIndex.rounded())
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    searchViewModel.selectRadius(options[index].metres)
+                }
+            } label: {
+                Text("Done")
+                    .font(.dmSans(14, weight: .black))
+                    .tracking(0.3)
+                    .foregroundStyle(Color.brandSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 11)
+                    .background(Color.brandPrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 16)
         }
         .padding(.vertical, 14)
         .background(.ultraThinMaterial)
