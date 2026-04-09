@@ -1,6 +1,20 @@
 import SwiftUI
+import UIKit
 
 struct ContentView: View {
+    init() {
+        // iOS 26's glass tab bar uses .tint() for the selected pill highlight and
+        // renders the icon/text as a contrasting black or white — wrong for our palette.
+        // Setting tintColor directly on UITabBar.appearance() (without touching
+        // standardAppearance) fixes the icon/text color while leaving glass intact.
+        let tint = UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 0xC9/255, green: 0xB8/255, blue: 0xE0/255, alpha: 1) // lavender
+                : UIColor(red: 0x1F/255, green: 0x3D/255, blue: 0x32/255, alpha: 1) // brandPrimary
+        }
+        UITabBar.appearance().tintColor = tint
+    }
+
     @State private var store = SpotStore()
     @State private var locationService = LocationService()
     @State private var savedSpotService = SavedSpotService()
