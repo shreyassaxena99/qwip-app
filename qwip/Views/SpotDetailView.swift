@@ -10,6 +10,7 @@ struct SpotDetailView: View {
     @State private var currentPhoto = 0
     @State private var showingSaveSheet = false
     @State private var showingShareSheet = false
+    @State private var showingMapsSheet = false
 
     var body: some View {
         NavigationStack {
@@ -35,44 +36,22 @@ struct SpotDetailView: View {
                 ])
             }
             .background(Color.brandSecondary.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button { dismiss() } label: {
-                        ZStack {
-                            Circle()
-                                .fill(.ultraThinMaterial)
-                                .overlay(Circle().stroke(Color.brandPrimary.opacity(0.12), lineWidth: 1))
-                                .frame(width: 32, height: 32)
-                            Image(systemName: "xmark")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Color.brandPrimary)
-                        }
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingSaveSheet = true
-                    } label: {
-                        ZStack {
-                            Circle()
-                                .fill(.ultraThinMaterial)
-                                .overlay(Circle().stroke(Color.brandPrimary.opacity(0.12), lineWidth: 1))
-                                .frame(width: 32, height: 32)
-                            Image(systemName: savedSpotService.isSaved(detail.id) ? "heart.fill" : "heart")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(savedSpotService.isSaved(detail.id) ? Color(hex: "e74c3c") : Color.brandPrimary)
-                                .contentTransition(.symbolEffect(.replace))
-                        }
-                    }
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingSaveSheet) {
                 SaveToCollectionSheet(spot: detail.asSpotPin)
             }
             .sheet(isPresented: $showingShareSheet) {
                 ShareSheet(items: [shareText])
                     .presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: $showingMapsSheet) {
+                MapsPickerSheet(
+                    latitude: detail.latitude,
+                    longitude: detail.longitude,
+                    userLocation: locationService.userLocation?.coordinate
+                )
+                .presentationDetents([.height(280)])
+                .presentationDragIndicator(.visible)
             }
         }
     }
@@ -122,6 +101,45 @@ struct SpotDetailView: View {
             }
         }
         .frame(height: 240)
+        .overlay(alignment: .top) {
+            HStack {
+                Button { dismiss() } label: {
+                    ZStack {
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .overlay(Circle().stroke(Color.brandPrimary.opacity(0.12), lineWidth: 1))
+                            .frame(width: 32, height: 32)
+                        Image("ic_x")
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 11, height: 11)
+                            .foregroundStyle(Color.brandPrimary)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                Button { showingSaveSheet = true } label: {
+                    ZStack {
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .overlay(Circle().stroke(Color.brandPrimary.opacity(0.12), lineWidth: 1))
+                            .frame(width: 32, height: 32)
+                        Image("ic_heart")
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 13, height: 13)
+                            .foregroundStyle(savedSpotService.isSaved(detail.id) ? Color(hex: "e74c3c") : Color.brandPrimary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+        }
     }
 
     private var gradientHero: some View {
@@ -152,8 +170,11 @@ struct SpotDetailView: View {
                         .overlay(Circle().stroke(Color.brandSecondary.opacity(0.3), lineWidth: 1.5))
                         .frame(width: 80, height: 80)
                         .shadow(color: Color.brandPrimary.opacity(0.3), radius: 12, x: 0, y: 4)
-                    Image(systemName: detail.category.systemIcon)
-                        .font(.system(size: 34, weight: .semibold))
+                    Image(detail.category.iconName)
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 34, height: 34)
                         .foregroundStyle(Color.brandSecondary)
                 }
                 Text(detail.category.displayName.uppercased())
@@ -181,8 +202,11 @@ struct SpotDetailView: View {
 
             HStack(spacing: 8) {
                 HStack(spacing: 3) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 11))
+                    Image("ic_star")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 11, height: 11)
                         .foregroundStyle(.orange)
                     Text(detail.formattedRating)
                         .font(.dmSans(14, weight: .heavy))
@@ -221,16 +245,16 @@ struct SpotDetailView: View {
                 alignment: .leading,
                 spacing: 8
             ) {
-                TagChip(icon: "wifi", label: detail.wifiAvailable ? "Wi-Fi" : "No Wi-Fi",
+                TagChip(icon: "ic_wifi", label: detail.wifiAvailable ? "Wi-Fi" : "No Wi-Fi",
                         active: detail.wifiAvailable)
-                TagChip(icon: "powerplug.fill", label: detail.powerOutlets ? "Power" : "No Power",
+                TagChip(icon: "ic_plug_zap", label: detail.powerOutlets ? "Power" : "No Power",
                         active: detail.powerOutlets)
                 if let noise = detail.noiseMatrix?.currentLevel(),
                    let text = detail.noiseMatrix?.currentDisplayText() {
-                    TagChip(icon: noise.systemIcon, label: text, active: true)
+                    TagChip(icon: noise.iconName, label: text, active: true)
                 }
-                TagChip(icon: detail.accessType.systemIcon, label: detail.accessType.displayName,
-                        active: detail.accessType == .free)
+                TagChip(icon: detail.accessType.iconName, label: detail.accessType.displayName,
+                        active: true)
             }
         }
         .padding(18)
@@ -243,10 +267,10 @@ struct SpotDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             sectionHeader("Amenities")
             FlowLayout(spacing: 8) {
-                if detail.outdoorSeating == true { AmenityChip(icon: "sun.max.fill", label: "Outdoor Seating") }
-                if detail.allowsDogs == true     { AmenityChip(icon: "pawprint.fill", label: "Dog Friendly") }
-                if detail.servesCoffee == true   { AmenityChip(icon: "cup.and.saucer.fill", label: "Coffee") }
-                if detail.goodForGroups == true  { AmenityChip(icon: "person.3.fill", label: "Good for Groups") }
+                if detail.outdoorSeating == true { AmenityChip(icon: "ic_sun",       label: "Outdoor Seating") }
+                if detail.allowsDogs == true     { AmenityChip(icon: "ic_paw_print", label: "Dog Friendly") }
+                if detail.servesCoffee == true   { AmenityChip(icon: "ic_coffee",    label: "Coffee") }
+                if detail.goodForGroups == true  { AmenityChip(icon: "ic_users",     label: "Good for Groups") }
             }
         }
         .padding(18)
@@ -259,12 +283,12 @@ struct SpotDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader("Info")
             if let address = detail.displayAddress {
-                ContactRow(icon: "mappin.circle.fill", text: address, url: nil)
+                ContactRow(icon: "ic_map_pin", text: address, url: nil)
             }
             if let phone = detail.phoneNational {
                 Divider().overlay(Color.brandPrimary.opacity(0.08))
                 ContactRow(
-                    icon: "phone.circle.fill",
+                    icon: "ic_phone",
                     text: phone,
                     url: URL(string: "tel:\(phone.replacingOccurrences(of: " ", with: ""))")
                 )
@@ -274,7 +298,7 @@ struct SpotDetailView: View {
                 let display = website
                     .replacingOccurrences(of: "https://", with: "")
                     .replacingOccurrences(of: "http://", with: "")
-                ContactRow(icon: "globe.americas.fill", text: display, url: url)
+                ContactRow(icon: "ic_globe", text: display, url: url)
             }
         }
         .padding(18)
@@ -296,8 +320,11 @@ struct SpotDetailView: View {
                 showingShareSheet = true
             } label: {
                 VStack(spacing: 7) {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 22, weight: .semibold))
+                    Image("ic_share_2")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 22, height: 22)
                         .foregroundStyle(Color.brandPrimary)
                     Text("Share")
                         .font(.dmSans(12, weight: .bold))
@@ -318,15 +345,14 @@ struct SpotDetailView: View {
                     "spot_name": detail.name,
                     "spot_area": detail.shortAddress ?? ""
                 ])
-                var urlString = "maps://?daddr=\(detail.latitude),\(detail.longitude)&dirflg=d"
-                if let loc = locationService.userLocation {
-                    urlString += "&saddr=\(loc.coordinate.latitude),\(loc.coordinate.longitude)"
-                }
-                if let url = URL(string: urlString) { UIApplication.shared.open(url) }
+                showingMapsSheet = true
             } label: {
                 VStack(spacing: 7) {
-                    Image(systemName: "arrow.triangle.turn.up.right.diamond.fill")
-                        .font(.system(size: 22, weight: .semibold))
+                    Image("ic_route")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 22, height: 22)
                         .foregroundStyle(Color.brandSecondary)
                     Text("Directions")
                         .font(.dmSans(12, weight: .bold))
@@ -378,6 +404,92 @@ private struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
 
+// MARK: - Maps Picker Sheet
+
+private struct MapsPickerSheet: View {
+    let latitude: Double
+    let longitude: Double
+    let userLocation: CLLocationCoordinate2D?
+    @Environment(\.dismiss) private var dismiss
+
+    private struct MapApp {
+        let name: String
+        let icon: String
+        let url: URL
+    }
+
+    private var availableApps: [MapApp] {
+        var apps: [MapApp] = []
+        let lat = latitude, lng = longitude
+
+        if let url = URL(string: "comgooglemaps://?daddr=\(lat),\(lng)&directionsmode=driving"),
+           UIApplication.shared.canOpenURL(url) {
+            apps.append(MapApp(name: "Google Maps", icon: "map", url: url))
+        }
+        if let url = URL(string: "waze://?ll=\(lat),\(lng)&navigate=yes"),
+           UIApplication.shared.canOpenURL(url) {
+            apps.append(MapApp(name: "Waze", icon: "car.fill", url: url))
+        }
+        if let url = URL(string: "citymapper://directions?endcoord=\(lat),\(lng)"),
+           UIApplication.shared.canOpenURL(url) {
+            apps.append(MapApp(name: "Citymapper", icon: "tram.fill", url: url))
+        }
+        var appleURLString = "maps://?daddr=\(lat),\(lng)&dirflg=d"
+        if let loc = userLocation {
+            appleURLString += "&saddr=\(loc.latitude),\(loc.longitude)"
+        }
+        if let url = URL(string: appleURLString) {
+            apps.append(MapApp(name: "Apple Maps", icon: "map.fill", url: url))
+        }
+        return apps
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Open with")
+                .font(.dmSans(18, weight: .black))
+                .foregroundStyle(Color.brandPrimary)
+                .padding(.horizontal, 24)
+                .padding(.top, 28)
+                .padding(.bottom, 20)
+
+            VStack(spacing: 0) {
+                ForEach(availableApps, id: \.name) { app in
+                    Button {
+                        UIApplication.shared.open(app.url)
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 14) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(Color.brandPrimary.opacity(0.08))
+                                    .frame(width: 40, height: 40)
+                                Image(systemName: app.icon)
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(Color.brandPrimary)
+                            }
+                            Text(app.name)
+                                .font(.dmSans(15, weight: .semibold))
+                                .foregroundStyle(Color.brandPrimary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Color.brandPrimary.opacity(0.3))
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            Spacer()
+        }
+        .background(Color.brandSecondary.ignoresSafeArea())
+    }
+}
+
 // MARK: - Tag Chip
 
 struct TagChip: View {
@@ -387,8 +499,11 @@ struct TagChip: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 11, weight: .semibold))
+            Image(icon)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 11, height: 11)
                 .foregroundStyle(active ? Color.brandPrimary : Color.brandPrimary.opacity(0.35))
             Text(label)
                 .font(.dmSans(12, weight: .bold))
@@ -416,8 +531,11 @@ struct AmenityChip: View {
 
     var body: some View {
         HStack(spacing: 5) {
-            Image(systemName: icon)
-                .font(.system(size: 11, weight: .semibold))
+            Image(icon)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 11, height: 11)
             Text(label)
                 .font(.dmSans(12, weight: .bold))
         }
@@ -451,8 +569,11 @@ struct ContactRow: View {
 
     private func rowContent(tappable: Bool) -> some View {
         HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
+            Image(icon)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
                 .foregroundStyle(Color.brandPrimary)
                 .frame(width: 24)
             Text(text)
@@ -462,8 +583,11 @@ struct ContactRow: View {
                 .lineLimit(2)
             if tappable {
                 Spacer()
-                Image(systemName: "arrow.up.right")
-                    .font(.system(size: 11, weight: .bold))
+                Image("ic_arrow_up_right")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 11, height: 11)
                     .foregroundStyle(Color.brandPrimary.opacity(0.4))
             }
         }
