@@ -26,15 +26,15 @@ enum SpotCategory: String, CaseIterable, Codable, Identifiable {
         }
     }
 
-    var systemIcon: String {
+    var iconName: String {
         switch self {
-        case .cafe: return "cup.and.saucer.fill"
-        case .coworking: return "laptopcomputer"
-        case .gym: return "dumbbell.fill"
-        case .hotelLobby: return "building.2.fill"
-        case .library: return "books.vertical.fill"
-        case .restaurant: return "fork.knife"
-        case .other: return "speaker.slash.fill"
+        case .cafe: return "ic_coffee"
+        case .coworking: return "ic_laptop_2"
+        case .gym: return "ic_dumbbell"
+        case .hotelLobby: return "ic_hotel"
+        case .library: return "ic_book_open"
+        case .restaurant: return "ic_utensils"
+        case .other: return "ic_map_pin"
         }
     }
 }
@@ -52,11 +52,11 @@ enum AccessType: String, Codable {
         }
     }
 
-    var systemIcon: String {
+    var iconName: String {
         switch self {
-        case .free: return "checkmark.circle.fill"
-        case .purchaseRequired: return "creditcard.fill"
-        case .membersOnly: return "person.badge.key.fill"
+        case .free: return "ic_check_circle"
+        case .purchaseRequired: return "ic_credit_card"
+        case .membersOnly: return "ic_key_round"
         }
     }
 }
@@ -74,11 +74,11 @@ enum NoiseLevel: String, Codable {
         }
     }
 
-    var systemIcon: String {
+    var iconName: String {
         switch self {
-        case .quiet: return "speaker.slash.fill"
-        case .moderate: return "speaker.wave.1.fill"
-        case .lively: return "speaker.wave.3.fill"
+        case .quiet: return "ic_volume_x"
+        case .moderate: return "ic_volume_1"
+        case .lively: return "ic_volume_2"
         }
     }
 }
