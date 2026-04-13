@@ -120,24 +120,13 @@ struct MapView: View {
             if store.isLoading && store.spots.isEmpty {
                 loadingOverlay
             }
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            VStack(spacing: 0) {
-                if searchViewModel.isExpanded {
-                    if searchViewModel.selectedPlace != nil && searchViewModel.selectedRadius == nil {
-                        RadiusPickerCard()
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    } else if !searchViewModel.results.isEmpty {
-                        SearchResultsCard()
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-                }
-                MapSearchBar()
+            if searchViewModel.isSearchActive {
+                SearchOverlay()
+                    .transition(.opacity)
+                    .zIndex(10)
             }
-            .animation(.spring(response: 0.35, dampingFraction: 0.8), value: searchViewModel.isExpanded)
-            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: searchViewModel.results.count)
-            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: searchViewModel.selectedPlace?.id)
         }
+        .animation(.easeInOut(duration: 0.22), value: searchViewModel.isSearchActive)
         .task {
             locationService.requestAuthorization()
             await store.loadSpots()
@@ -321,9 +310,26 @@ struct MapView: View {
                     .padding(.vertical, 9)
                 }
             }
+            .mask(
+                HStack(spacing: 0) {
+                    LinearGradient(
+                        colors: [.clear, .black],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: 28)
+                    Rectangle()
+                    LinearGradient(
+                        colors: [.black, .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: 28)
+                }
+            )
 
             Rectangle()
-                .fill(Color.primary.opacity(0.12))
+                .fill(Color.brandBorder)
                 .frame(width: 1, height: 22)
 
             Button { showFilters = true } label: {
@@ -374,7 +380,7 @@ struct MapView: View {
                         .buttonStyle(.plain)
 
                         Rectangle()
-                            .fill(Color.primary.opacity(0.12))
+                            .fill(Color.brandBorder)
                             .frame(width: 22, height: 1)
 
                         // 3D toggle button
@@ -397,7 +403,7 @@ struct MapView: View {
                         // Compass — only visible when map is rotated from north
                         if abs(mapHeading) > 0.5 {
                             Rectangle()
-                                .fill(Color.primary.opacity(0.12))
+                                .fill(Color.brandBorder)
                                 .frame(width: 22, height: 1)
                                 .transition(.opacity)
 
@@ -491,7 +497,7 @@ struct MapView: View {
                             ZStack {
                                 Circle()
                                     .fill(.ultraThinMaterial)
-                                    .overlay(Circle().stroke(Color.brandPrimary.opacity(0.12), lineWidth: 1))
+                                    .overlay(Circle().stroke(Color.brandBorder, lineWidth: 1))
                                     .frame(width: 32, height: 32)
                                 Image("ic_heart")
                                     .renderingMode(.template)
@@ -617,7 +623,7 @@ struct MapView: View {
 
     private func dividerLine() -> some View {
         Rectangle()
-            .fill(Color.brandPrimary.opacity(0.12))
+            .fill(Color.brandBorder)
             .frame(width: 1, height: 32)
     }
 
@@ -758,7 +764,7 @@ private struct FiltersSheet: View {
                                 isOn: $bindableStore.filterOpenNow
                             )
                             Divider()
-                                .overlay(Color.brandPrimary.opacity(0.08))
+                                .overlay(Color.brandBorder)
                                 .padding(.horizontal, 16)
                             filterRow(
                                 icon: "wifi",
@@ -892,8 +898,7 @@ private struct NoisePill: View {
             }
             .foregroundStyle(isActive ? Color.brandSecondary : Color.brandPrimary)
             .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, minHeight: 44)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(isActive ? Color.brandPrimary : Color.brandPrimary.opacity(0.06))
@@ -917,12 +922,10 @@ struct FilterPill: View {
     let action: () -> Void
     @Environment(\.colorScheme) private var colorScheme
 
-    private static let lavender = Color(red: 0xC9/255, green: 0xB8/255, blue: 0xE0/255)
-
     var body: some View {
         if isActive && colorScheme == .dark {
             pill
-                .background(Capsule().fill(Self.lavender))
+                .background(Capsule().fill(Color.brandPrimary))
         } else if isActive {
             pill.glassEffect(in: .capsule)
         } else {
