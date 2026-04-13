@@ -923,11 +923,9 @@ struct FilterPill: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        if isActive && colorScheme == .dark {
+        if isActive {
             pill
                 .background(Capsule().fill(Color.brandPrimary))
-        } else if isActive {
-            pill.glassEffect(in: .capsule)
         } else {
             pill
         }
@@ -947,7 +945,7 @@ struct FilterPill: View {
                     .font(.dmSans(10, weight: .black))
                     .tracking(0.5)
             }
-            .foregroundStyle(isActive && colorScheme == .dark ? Color.black : Color.primary)
+            .foregroundStyle(isActive ? Color.brandSecondary : Color.primary)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
         }
