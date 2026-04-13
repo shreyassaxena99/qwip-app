@@ -496,7 +496,11 @@ private struct MyAccountView: View {
         .background(Color.brandSecondary.ignoresSafeArea())
         .navigationTitle("My Account")
         .navigationBarTitleDisplayMode(.large)
-        .sheet(isPresented: $showingReasonSheet) {
+        .sheet(isPresented: $showingReasonSheet, onDismiss: {
+            if !showingDeleteConfirmation {
+                selectedDeletionReason = nil
+            }
+        }) {
             DeleteAccountReasonSheet { reason in
                 selectedDeletionReason = reason
             }
