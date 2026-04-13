@@ -72,6 +72,7 @@ struct SpotAPIClient {
 
         do {
             let detail = try decoder.decode(SpotDetail.self, from: data)
+            print("[SpotAPIClient] fetchSpotDetail(\(id)) photos[\(detail.photos.count)]: \(detail.photos)")
             detailCache.setObject(SpotDetailBox(detail), forKey: key)
             return detail
         } catch {

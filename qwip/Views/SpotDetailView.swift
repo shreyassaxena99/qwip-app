@@ -59,9 +59,15 @@ struct SpotDetailView: View {
     // MARK: - Hero
 
     private var heroSection: some View {
-        let urls = detail.photos.compactMap { URL(string: $0) }
+        let rawPhotos = detail.photos
+        let urls = rawPhotos.compactMap { URL(string: $0) }
+        if urls.count != rawPhotos.count {
+            let dropped = rawPhotos.filter { URL(string: $0) == nil }
+            print("[SpotDetailView] \(detail.name): \(dropped.count) photo URL(s) dropped (invalid): \(dropped)")
+        }
         return ZStack(alignment: .bottom) {
             if urls.isEmpty {
+                let _ = print("[SpotDetailView] \(detail.name): no valid photo URLs — showing gradient hero")
                 gradientHero
             } else {
                 TabView(selection: $currentPhoto) {
@@ -72,6 +78,9 @@ struct SpotDetailView: View {
                                 image
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
+                            case .failure(let error):
+                                let _ = print("[SpotDetailView] \(detail.name): photo[\(index)] failed — \(url) — \(error.localizedDescription)")
+                                gradientHero
                             default:
                                 gradientHero
                             }
