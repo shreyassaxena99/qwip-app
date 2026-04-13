@@ -40,6 +40,13 @@ struct ContentView: View {
                 EmptyView()
             }
         }
+        .overlay {
+            if searchViewModel.isSearchActive {
+                SearchOverlay()
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.22), value: searchViewModel.isSearchActive)
         .environment(store)
         .environment(locationService)
         .environment(savedSpotService)
@@ -56,8 +63,8 @@ struct ContentView: View {
         .onChange(of: selectedTab) { old, new in
             guard new != old else { return }
             if new == 3 {
-                // Intercept search bubble tap: go to Map and open overlay
-                selectedTab = 0
+                // Intercept search bubble tap: stay on current tab and open overlay
+                selectedTab = old
                 withAnimation(.easeInOut(duration: 0.25)) {
                     searchViewModel.isSearchActive = true
                 }

@@ -120,13 +120,7 @@ struct MapView: View {
             if store.isLoading && store.spots.isEmpty {
                 loadingOverlay
             }
-            if searchViewModel.isSearchActive {
-                SearchOverlay()
-                    .transition(.opacity)
-                    .zIndex(10)
-            }
         }
-        .animation(.easeInOut(duration: 0.22), value: searchViewModel.isSearchActive)
         .task {
             locationService.requestAuthorization()
             await store.loadSpots()
