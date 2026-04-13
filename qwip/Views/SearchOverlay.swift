@@ -237,6 +237,7 @@ private struct SearchRadiusCard: View {
 
             VStack(spacing: 4) {
                 Slider(value: $sliderIndex, in: 0...Double(options.count - 1), step: 1)
+                    .tint(Color.brandPrimary)
                     .padding(.horizontal, 16)
 
                 HStack(spacing: 0) {
