@@ -64,6 +64,7 @@ final class SearchViewModel {
         selectedRadius = nil
         results = []
         query = ""
+        isSearchActive = true
     }
 
     func selectRadius(_ metres: Double) {
