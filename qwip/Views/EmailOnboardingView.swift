@@ -65,7 +65,7 @@ private struct OTPStepView: View {
                     ZStack {
                         Circle()
                             .fill(.ultraThinMaterial)
-                            .overlay(Circle().stroke(Color.brandPrimary.opacity(0.12), lineWidth: 1.5))
+                            .overlay(Circle().stroke(Color.brandBorder, lineWidth: 1.5))
                             .frame(width: 72, height: 72)
                         Image(systemName: "envelope.badge.fill")
                             .font(.system(size: 30, weight: .semibold))
@@ -235,80 +235,74 @@ private struct NameStepView: View {
         ScrollView {
             VStack(spacing: 0) {
 
-                VStack(spacing: 8) {
-                    Text("qwip")
-                        .font(.funnelDisplay(56, weight: .bold))
+                // Header — matches OnboardingView style
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("WELCOME")
+                        .font(.dmSans(10, weight: .black))
+                        .tracking(1.5)
+                        .foregroundStyle(Color.brandPrimary.opacity(0.4))
+                    Text("What's your name?")
+                        .font(.dmSans(26, weight: .heavy))
                         .foregroundStyle(Color.brandPrimary)
-
-                    Text("one last thing,")
-                        .font(.funnelDisplay(18, weight: .bold))
-                        .foregroundStyle(Color.brandPrimary.opacity(0.5))
                 }
-                .padding(.top, 100)
-                .padding(.bottom, 44)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 80)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 20)
 
-                VStack(spacing: 10) {
-                    Text("what's your name?")
-                        .font(.cormorantGaramond(21))
-                        .italic()
-                        .foregroundStyle(Color.brandPrimary.opacity(0.6))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.bottom, 2)
-
+                // Name field card
+                VStack(spacing: 0) {
                     TextField("Your name", text: $name)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
                         .focused($nameFocused)
                         .font(.dmSans(15, weight: .medium))
                         .foregroundStyle(Color.brandPrimary)
-                        .padding(14)
-                        .background(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(Color.brandPrimary.opacity(0.05))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .stroke(Color.brandPrimary.opacity(nameFocused ? 0.3 : 0.12), lineWidth: 1.5)
-                                )
-                        )
-
-                    if let errorMessage {
-                        Text(errorMessage)
-                            .font(.dmSans(13))
-                            .foregroundStyle(.red)
-                            .multilineTextAlignment(.center)
-                    }
-
-                    Button(action: { Task { await submit() } }) {
-                        ZStack {
-                            if isLoading {
-                                ProgressView().tint(Color.brandSecondary)
-                            } else {
-                                HStack(spacing: 8) {
-                                    Text("Continue")
-                                        .font(.dmSans(15, weight: .black))
-                                        .tracking(0.3)
-                                    Image(systemName: "arrow.right")
-                                        .font(.system(size: 13, weight: .bold))
-                                }
-                                .foregroundStyle(Color.brandSecondary)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(Color.brandPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .shadow(color: Color.brandPrimary.opacity(0.4), radius: 12, x: 0, y: 5)
-                    }
-                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isLoading)
-                    .opacity(name.trimmingCharacters(in: .whitespaces).isEmpty || isLoading ? 0.7 : 1)
+                        .padding(16)
                 }
-                .padding(20)
-                .background(glassBackground(cornerRadius: 24))
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .background(glassBackground(cornerRadius: 20))
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .shadow(color: Color.brandPrimary.opacity(0.08), radius: 24, x: 0, y: 8)
-                .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
+                .padding(.horizontal, 24)
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.dmSans(13))
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 12)
+                }
+
+                // Continue button
+                Button(action: { Task { await submit() } }) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.brandPrimary)
+                            .shadow(color: Color.brandPrimary.opacity(0.4), radius: 12, x: 0, y: 5)
+                        if isLoading {
+                            ProgressView().tint(Color.brandSecondary)
+                        } else {
+                            HStack(spacing: 8) {
+                                Text("Continue")
+                                    .font(.dmSans(15, weight: .black))
+                                    .tracking(0.3)
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 13, weight: .bold))
+                            }
+                            .foregroundStyle(Color.brandSecondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                }
+                .buttonStyle(.plain)
+                .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || isLoading)
+                .opacity(name.trimmingCharacters(in: .whitespaces).isEmpty || isLoading ? 0.7 : 1)
+                .padding(.top, 16)
                 .padding(.horizontal, 24)
             }
+            .padding(.bottom, 40)
         }
         .scrollBounceBehavior(.basedOnSize)
         .onAppear { nameFocused = true }

@@ -107,7 +107,7 @@ struct SpotDetailView: View {
                     ZStack {
                         Circle()
                             .fill(.ultraThinMaterial)
-                            .overlay(Circle().stroke(Color.brandPrimary.opacity(0.12), lineWidth: 1))
+                            .overlay(Circle().stroke(Color.brandBorder, lineWidth: 1))
                             .frame(width: 32, height: 32)
                         Image("ic_x")
                             .renderingMode(.template)
@@ -125,7 +125,7 @@ struct SpotDetailView: View {
                     ZStack {
                         Circle()
                             .fill(.ultraThinMaterial)
-                            .overlay(Circle().stroke(Color.brandPrimary.opacity(0.12), lineWidth: 1))
+                            .overlay(Circle().stroke(Color.brandBorder, lineWidth: 1))
                             .frame(width: 32, height: 32)
                         Image("ic_heart")
                             .renderingMode(.template)
@@ -286,7 +286,7 @@ struct SpotDetailView: View {
                 ContactRow(icon: "ic_map_pin", text: address, url: nil)
             }
             if let phone = detail.phoneNational {
-                Divider().overlay(Color.brandPrimary.opacity(0.08))
+                Divider().overlay(Color.brandBorder)
                 ContactRow(
                     icon: "ic_phone",
                     text: phone,
@@ -294,7 +294,7 @@ struct SpotDetailView: View {
                 )
             }
             if let website = detail.websiteUri, let url = URL(string: website) {
-                Divider().overlay(Color.brandPrimary.opacity(0.08))
+                Divider().overlay(Color.brandBorder)
                 let display = website
                     .replacingOccurrences(of: "https://", with: "")
                     .replacingOccurrences(of: "http://", with: "")

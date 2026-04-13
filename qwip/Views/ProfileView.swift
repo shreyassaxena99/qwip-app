@@ -37,7 +37,7 @@ private enum ProfileField: Identifiable {
         switch self {
         case .workingStyle: return Color(hex: "5E6AD2")
         case .homeArea:     return Color(hex: "34C759")
-        case .workArea:     return Color.brandPrimary
+        case .workArea:     return Color(hex: "1f3d32")
         }
     }
 }
@@ -78,12 +78,12 @@ struct ProfileView: View {
 
                     // Menu
                     GlassCard {
-                        menuRow("About You",   icon: "ic_user",        color: Color.brandPrimary,   dest: .aboutYou)
-                        Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                        menuRow("About You",   icon: "ic_user",        color: Color(hex: "1f3d32"), dest: .aboutYou)
+                        Divider().overlay(Color.brandBorder).padding(.leading, 44)
                         menuRow("Preferences", icon: "ic_settings",     color: Color(hex: "5E6AD2"), dest: .preferences)
-                        Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                        Divider().overlay(Color.brandBorder).padding(.leading, 44)
                         menuRow("About",       icon: "ic_info",         color: Color(hex: "34C759"), dest: .about)
-                        Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                        Divider().overlay(Color.brandBorder).padding(.leading, 44)
                         menuRow("My Account",  icon: "ic_circle_user",  color: Color(hex: "FF9500"), dest: .myAccount)
                     }
                 }
@@ -168,11 +168,11 @@ private struct AboutYouView: View {
                     }
                     .buttonStyle(.plain)
 
-                    Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                    Divider().overlay(Color.brandBorder).padding(.leading, 44)
                     profileFieldRow(.workingStyle)
-                    Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                    Divider().overlay(Color.brandBorder).padding(.leading, 44)
                     profileFieldRow(.homeArea)
-                    Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                    Divider().overlay(Color.brandBorder).padding(.leading, 44)
                     profileFieldRow(.workArea)
                 }
             }
@@ -228,7 +228,7 @@ private struct AboutYouView: View {
                 Spacer()
                 if isLoadingProfile {
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(Color.brandPrimary.opacity(0.15))
+                        .fill(Color.brandBorder)
                         .frame(width: 60, height: 12)
                 } else {
                     let value: String? = {
@@ -334,7 +334,7 @@ private struct PreferencesView: View {
                                     .foregroundStyle(Color.brandPrimary.opacity(0.5))
                             }
                         } icon: {
-                            GlassIcon(iconName: "ic_mail", color: .brandPrimary)
+                            GlassIcon(iconName: "ic_mail", color: Color(hex: "1f3d32"))
                         }
                     }
                     .tint(Color.brandPrimary)
@@ -361,7 +361,7 @@ private struct PreferencesView: View {
                         }
                         .pickerStyle(.segmented)
                     } icon: {
-                        GlassIcon(iconName: "ic_map", color: Color.brandPrimary)
+                        GlassIcon(iconName: "ic_map", color: Color(hex: "1f3d32"))
                     }
                 }
             }
@@ -395,7 +395,7 @@ private struct AboutAppView: View {
                         }
                     }
 
-                    Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                    Divider().overlay(Color.brandBorder).padding(.leading, 44)
 
                     Link(destination: URL(string: "https://qwip.co.uk/privacy-policy")!) {
                         HStack {
@@ -459,7 +459,7 @@ private struct MyAccountView: View {
                     }
                     .buttonStyle(.plain)
 
-                    Divider().overlay(Color.brandPrimary.opacity(0.08)).padding(.leading, 44)
+                    Divider().overlay(Color.brandBorder).padding(.leading, 44)
 
                     Button(role: .destructive) {
                         showingDeleteConfirmation = true
@@ -610,6 +610,8 @@ private struct ProfileFieldPickerSheet: View {
     let currentValue: String?
     var onSave: (String) -> Void
 
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -617,7 +619,7 @@ private struct ProfileFieldPickerSheet: View {
                     VStack(spacing: 0) {
                         ForEach(Array(field.options.enumerated()), id: \.offset) { index, option in
                             if index > 0 {
-                                Divider().overlay(Color.brandPrimary.opacity(0.07))
+                                Divider().overlay(Color.brandBorder)
                             }
                             optionRow(option)
                         }
@@ -634,6 +636,19 @@ private struct ProfileFieldPickerSheet: View {
             .background(Color.brandSecondary.ignoresSafeArea())
             .navigationTitle(field.question)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 13, weight: .semibold))
+                            Text("Back")
+                                .font(.dmSans(15))
+                        }
+                        .foregroundStyle(Color.brandPrimary)
+                    }
+                }
+            }
         }
     }
 
@@ -650,7 +665,7 @@ private struct ProfileFieldPickerSheet: View {
                 Spacer()
                 ZStack {
                     Circle()
-                        .stroke(Color.brandPrimary.opacity(selected ? 0 : 0.2), lineWidth: 1.5)
+                        .stroke(selected ? Color.clear : Color.brandBorder, lineWidth: 1.5)
                         .frame(width: 22, height: 22)
                     if selected {
                         Circle()

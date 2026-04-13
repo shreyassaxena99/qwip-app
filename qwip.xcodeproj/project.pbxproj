@@ -6,6 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		55226CD02F50CF88003873C2 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 55226CCE2F50CF82003873C2 /* .gitignore */; };
+		553410322F6578120087C034 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 553410312F6578120087C034 /* GoogleSignIn */; };
+		553410342F6578120087C034 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 553410332F6578120087C034 /* GoogleSignInSwift */; };
+		5534103B2F657B1F0087C034 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 5534103A2F657B1F0087C034 /* Supabase */; };
+		55F1BC312F7AEECD0006C344 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 55F1BC302F7AEECD0006C344 /* PostHog */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		55226CB12F50CEBD003873C2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,11 +35,25 @@
 		55226CA32F50CEBB003873C2 /* qwip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = qwip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		55226CB02F50CEBD003873C2 /* qwipTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = qwipTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		55226CBA2F50CEBD003873C2 /* qwipUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = qwipUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		55226CCE2F50CF82003873C2 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		553410382F6579E20087C034 /* Exceptions for "qwip" folder in "qwip" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 55226CA22F50CEBB003873C2 /* qwip */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		55226CA52F50CEBB003873C2 /* qwip */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				553410382F6579E20087C034 /* Exceptions for "qwip" folder in "qwip" target */,
+			);
 			path = qwip;
 			sourceTree = "<group>";
 		};
@@ -45,6 +67,11 @@
 			path = qwipUITests;
 			sourceTree = "<group>";
 		};
+		55226CCD2F50CF73003873C2 /* claude */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = claude;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,6 +79,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				553410322F6578120087C034 /* GoogleSignIn in Frameworks */,
+				553410342F6578120087C034 /* GoogleSignInSwift in Frameworks */,
+				5534103B2F657B1F0087C034 /* Supabase in Frameworks */,
+				55F1BC312F7AEECD0006C344 /* PostHog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -79,6 +110,9 @@
 				55226CB32F50CEBD003873C2 /* qwipTests */,
 				55226CBD2F50CEBD003873C2 /* qwipUITests */,
 				55226CA42F50CEBB003873C2 /* Products */,
+				55226CCD2F50CF73003873C2 /* claude */,
+				55226CCE2F50CF82003873C2 /* .gitignore */,
+				553410392F657B140087C034 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -90,6 +124,13 @@
 				55226CBA2F50CEBD003873C2 /* qwipUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		553410392F657B140087C034 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -109,9 +150,14 @@
 			);
 			fileSystemSynchronizedGroups = (
 				55226CA52F50CEBB003873C2 /* qwip */,
+				55226CCD2F50CF73003873C2 /* claude */,
 			);
 			name = qwip;
 			packageProductDependencies = (
+				553410312F6578120087C034 /* GoogleSignIn */,
+				553410332F6578120087C034 /* GoogleSignInSwift */,
+				5534103A2F657B1F0087C034 /* Supabase */,
+				55F1BC302F7AEECD0006C344 /* PostHog */,
 			);
 			productName = qwip;
 			productReference = 55226CA32F50CEBB003873C2 /* qwip.app */;
@@ -195,6 +241,11 @@
 			);
 			mainGroup = 55226C9A2F50CEBB003873C2;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				5534102F2F6577EB0087C034 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				553410302F6578120087C034 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				55F1BC2F2F7AEECD0006C344 /* XCRemoteSwiftPackageReference "posthog-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 55226CA42F50CEBB003873C2 /* Products */;
 			projectDirPath = "";
@@ -212,6 +263,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				55226CD02F50CF88003873C2 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -393,15 +445,21 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = qwip/qwipDebug.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XV9269Z98G;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = qwip/Info.plist;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "qwip uses your location to show nearby work-friendly spots.";
+				INFOPLIST_KEY_UIAppFonts = "FunnelDisplay-Regular.ttf FunnelDisplay-Bold.ttf CormorantGaramond-Italic.ttf CormorantGaramond-LightItalic.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -424,15 +482,22 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = qwip/qwip.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = XV9269Z98G;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = qwip/Info.plist;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "qwip uses your location to show nearby work-friendly spots.";
+				INFOPLIST_KEY_UIAppFonts = "FunnelDisplay-Regular.ttf FunnelDisplay-Bold.ttf CormorantGaramond-Italic.ttf CormorantGaramond-LightItalic.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -440,6 +505,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.qwipuk.qwip;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -570,6 +636,56 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		5534102F2F6577EB0087C034 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+		553410302F6578120087C034 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.1.0;
+			};
+		};
+		55F1BC2F2F7AEECD0006C344 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.48.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		553410312F6578120087C034 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 553410302F6578120087C034 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		553410332F6578120087C034 /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 553410302F6578120087C034 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
+		5534103A2F657B1F0087C034 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5534102F2F6577EB0087C034 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+		55F1BC302F7AEECD0006C344 /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 55F1BC2F2F7AEECD0006C344 /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 55226C9B2F50CEBB003873C2 /* Project object */;
 }

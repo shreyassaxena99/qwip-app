@@ -1,6 +1,7 @@
 import Foundation
 import Supabase
 import GoogleSignIn
+import AuthenticationServices
 import CryptoKit
 import PostHog
 
@@ -52,6 +53,36 @@ final class AuthService {
     /// stream hasn't fired yet by the time the first view renders.
     func restoreSession() async {
         _ = try? await supabase.auth.session
+    }
+
+    // MARK: - Apple Sign In
+
+    /// Called by SignInView after SignInWithAppleButton completes its flow.
+    /// The view owns nonce generation so it can set the hashed nonce on the request.
+    func completeAppleSignIn(
+        credential: ASAuthorizationAppleIDCredential,
+        rawNonce: String
+    ) async throws {
+        guard
+            let tokenData = credential.identityToken,
+            let idToken = String(data: tokenData, encoding: .utf8)
+        else {
+            throw AuthError.missingIDToken
+        }
+
+        try await supabase.auth.signInWithIdToken(credentials: OpenIDConnectCredentials(
+            provider: .apple,
+            idToken: idToken,
+            nonce: rawNonce
+        ))
+
+        // Apple only provides the full name on the very first sign-in.
+        // Persist it immediately before the credential is invalidated.
+        if let name = credential.fullName,
+           let given = name.givenName, !given.isEmpty {
+            let full = [given, name.familyName].compactMap { $0 }.joined(separator: " ")
+            try? await updateProfile(displayName: full)
+        }
     }
 
     // MARK: - Google Sign In
@@ -203,7 +234,7 @@ private struct MeResponse: Decodable {
 
 // MARK: - Nonce Helpers
 
-private func randomNonceString(length: Int = 32) -> String {
+func randomNonceString(length: Int = 32) -> String {
     let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
     var result = ""
     var remainingLength = length
@@ -224,7 +255,7 @@ private func randomNonceString(length: Int = 32) -> String {
     return result
 }
 
-private func sha256(_ input: String) -> String {
+func sha256(_ input: String) -> String {
     let data = Data(input.utf8)
     let hash = SHA256.hash(data: data)
     return hash.compactMap { String(format: "%02x", $0) }.joined()
@@ -235,6 +266,7 @@ private func sha256(_ input: String) -> String {
 enum AuthError: LocalizedError {
     case noPresentingViewController
     case missingIDToken
+    case cancelledByUser
     case notAuthenticated
     case deleteAccountFailed(Int)
     case updateProfileFailed(Int)
@@ -244,7 +276,9 @@ enum AuthError: LocalizedError {
         case .noPresentingViewController:
             return "Could not find a view controller to present sign-in."
         case .missingIDToken:
-            return "Google sign-in did not return an ID token."
+            return "Sign-in did not return an ID token."
+        case .cancelledByUser:
+            return nil
         case .notAuthenticated:
             return "You must be signed in to perform this action."
         case .deleteAccountFailed(let code):
@@ -254,3 +288,4 @@ enum AuthError: LocalizedError {
         }
     }
 }
+

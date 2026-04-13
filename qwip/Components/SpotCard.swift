@@ -36,7 +36,7 @@ struct SpotCard: View {
                         .fill(.ultraThinMaterial)
                         .overlay(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(Color.brandPrimary.opacity(0.15), lineWidth: 1)
+                                .stroke(Color.brandBorder, lineWidth: 1)
                         )
                         .frame(width: 38, height: 38)
                     Image(spot.category.iconName)
@@ -242,18 +242,7 @@ func glassBackground(cornerRadius: CGFloat) -> some View {
         .fill(.ultraThinMaterial)
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .fill(Color.brandPrimary.opacity(0.05))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [Color.brandPrimary.opacity(0.22), Color.brandPrimary.opacity(0.06)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.5
-                )
+                .stroke(Color.brandBorder, lineWidth: 1)
         )
 }
 

@@ -1,5 +1,11 @@
 import Foundation
 
+struct UserProfile {
+    var workingStyle: String?
+    var homeArea: String?
+    var workArea: String?
+}
+
 struct UserProfileAPIClient {
 
     private static let baseURL = "https://spotsvc.up.railway.app"
@@ -16,6 +22,33 @@ struct UserProfileAPIClient {
             return false
         }
         return true
+    }
+
+    /// Fetches the full onboarding profile. Returns a UserProfile with nil fields if `exists == false`.
+    /// Throws ProfileError.fetchFailed on network or server errors.
+    static func fetchProfile(userId: String, token: String) async throws -> UserProfile {
+        guard let url = URL(string: "\(baseURL)/users/profile/\(userId)") else {
+            throw ProfileError.fetchFailed(0)
+        }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200...299).contains(status) else { throw ProfileError.fetchFailed(status) }
+        struct ProfileResponse: Decodable {
+            let exists: Bool
+            let workingStyle: String?
+            let homeArea: String?
+            let workArea: String?
+        }
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let body = try decoder.decode(ProfileResponse.self, from: data)
+        return UserProfile(
+            workingStyle: body.workingStyle,
+            homeArea: body.homeArea,
+            workArea: body.workArea
+        )
     }
 
     /// Posts the user's profile. Throws on server errors; callers should fail silently.
@@ -46,10 +79,12 @@ struct UserProfileAPIClient {
 
 enum ProfileError: LocalizedError {
     case saveFailed(Int)
+    case fetchFailed(Int)
 
     var errorDescription: String? {
         switch self {
-        case .saveFailed(let code): return "Profile save failed (server error \(code))."
+        case .saveFailed(let code):  return "Profile save failed (server error \(code))."
+        case .fetchFailed(let code): return "Couldn't load profile (server error \(code))."
         }
     }
 }

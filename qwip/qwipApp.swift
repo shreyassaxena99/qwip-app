@@ -58,9 +58,20 @@ struct qwipApp: App {
         )
     }
 
+    @AppStorage("appTheme") private var colorSchemePreference = "system"
+
+    private var preferredColorScheme: ColorScheme? {
+        switch colorSchemePreference {
+        case "light": return .light
+        case "dark":  return .dark
+        default:      return nil  // follows system
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()
+                .preferredColorScheme(preferredColorScheme)
                 .environment(authService)
                 .environment(appRouter)
                 .task {

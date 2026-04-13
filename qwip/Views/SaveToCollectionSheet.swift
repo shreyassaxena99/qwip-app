@@ -45,7 +45,7 @@ struct SaveToCollectionSheet: View {
                         ForEach(collectionService.collections) { collection in
                             Divider()
                                 .padding(.leading, 58)
-                                .overlay(Color.brandPrimary.opacity(0.08))
+                                .overlay(Color.brandBorder)
                             collectionRow(
                                 name: collection.name,
                                 icon: "folder.fill",
@@ -64,7 +64,7 @@ struct SaveToCollectionSheet: View {
                         // New collection
                         Divider()
                             .padding(.leading, 58)
-                            .overlay(Color.brandPrimary.opacity(0.08))
+                            .overlay(Color.brandBorder)
                         if isNewCollectionExpanded {
                             newCollectionField
                         } else {
@@ -125,7 +125,7 @@ struct SaveToCollectionSheet: View {
                         ZStack {
                             Circle()
                                 .fill(.ultraThinMaterial)
-                                .overlay(Circle().stroke(Color.brandPrimary.opacity(0.12), lineWidth: 1))
+                                .overlay(Circle().stroke(Color.brandBorder, lineWidth: 1))
                                 .frame(width: 32, height: 32)
                             Image(systemName: "xmark")
                                 .font(.system(size: 11, weight: .bold))
@@ -168,7 +168,7 @@ struct SaveToCollectionSheet: View {
                 Spacer()
                 ZStack {
                     Circle()
-                        .stroke(Color.brandPrimary.opacity(isSelected ? 0 : 0.25), lineWidth: 1.5)
+                        .stroke(isSelected ? Color.clear : Color.brandBorder, lineWidth: 1.5)
                         .frame(width: 22, height: 22)
                     if isSelected {
                         Circle()

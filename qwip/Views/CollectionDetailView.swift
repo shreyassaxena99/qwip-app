@@ -29,6 +29,7 @@ struct CollectionDetailView: View {
     @State private var fetchingDetailID: String? = nil
     @State private var fetchDetailError: String? = nil
     @State private var removeError: String? = nil
+    @State private var showEditSheet = false
 
     // Reactive for .favourites; local state for .collection
     private var displayEntries: [SavedSpotEntry] {
@@ -120,6 +121,26 @@ struct CollectionDetailView: View {
                             )
                     }
                     .disabled(!c.isShareable)
+                }
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showEditSheet = true } label: {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Color.brandPrimary)
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showEditSheet) {
+            if case .collection(let c) = source {
+                CollectionFormSheet(
+                    title: "Edit Collection",
+                    initialName: c.name,
+                    initialDescription: c.collectionDescription ?? "",
+                    initialShareable: c.isShareable
+                ) { name, description, isShareable in
+                    Task { try? await collectionService.update(id: c.id, name: name, collectionDescription: description, isShareable: isShareable) }
                 }
             }
         }
