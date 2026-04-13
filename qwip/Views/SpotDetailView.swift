@@ -72,22 +72,10 @@ struct SpotDetailView: View {
             } else {
                 TabView(selection: $currentPhoto) {
                     ForEach(Array(urls.enumerated()), id: \.offset) { index, url in
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            case .failure(let error):
-                                let _ = print("[SpotDetailView] \(detail.name): photo[\(index)] failed — \(url) — \(error.localizedDescription)")
-                                gradientHero
-                            default:
-                                gradientHero
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .clipped()
-                        .tag(index)
+                        DiagnosticPhotoView(url: url, spotName: detail.name, index: index, fallback: gradientHero)
+                            .frame(maxWidth: .infinity)
+                            .clipped()
+                            .tag(index)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
@@ -599,6 +587,57 @@ struct ContactRow: View {
                     .frame(width: 11, height: 11)
                     .foregroundStyle(Color.brandPrimary.opacity(0.4))
             }
+        }
+    }
+}
+
+// MARK: - Diagnostic Photo View
+
+/// Fetches a photo URL via URLSession so we can log the actual HTTP status on failure.
+private struct DiagnosticPhotoView<Fallback: View>: View {
+    let url: URL
+    let spotName: String
+    let index: Int
+    let fallback: Fallback
+
+    @State private var image: UIImage? = nil
+    @State private var failed = false
+
+    var body: some View {
+        Group {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                fallback
+                    .task {
+                        await load()
+                    }
+            }
+        }
+    }
+
+    private func load() async {
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            print("[DiagnosticPhotoView] \(spotName) photo[\(index)] — HTTP \(status) — \(url)")
+            if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+                let body = String(data: data, encoding: .utf8)?.prefix(200) ?? "<binary>"
+                print("[DiagnosticPhotoView] \(spotName) photo[\(index)] error body: \(body)")
+                failed = true
+                return
+            }
+            guard let img = UIImage(data: data) else {
+                print("[DiagnosticPhotoView] \(spotName) photo[\(index)] — data not decodable as image (\(data.count) bytes)")
+                failed = true
+                return
+            }
+            image = img
+        } catch {
+            print("[DiagnosticPhotoView] \(spotName) photo[\(index)] — network error: \(error.localizedDescription)")
+            failed = true
         }
     }
 }
