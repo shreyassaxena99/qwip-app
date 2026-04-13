@@ -431,6 +431,8 @@ private struct AboutAppView: View {
 private struct MyAccountView: View {
     @Environment(AuthService.self) var authService
     @Environment(\.signOut) var signOut
+    @State private var showingReasonSheet = false
+    @State private var selectedDeletionReason: String? = nil
     @State private var showingDeleteConfirmation = false
     @State private var isDeleting = false
     @State private var deleteError: String? = nil
@@ -462,7 +464,7 @@ private struct MyAccountView: View {
                     Divider().overlay(Color.brandBorder).padding(.leading, 44)
 
                     Button(role: .destructive) {
-                        showingDeleteConfirmation = true
+                        showingReasonSheet = true
                     } label: {
                         HStack {
                             Label {
@@ -494,12 +496,21 @@ private struct MyAccountView: View {
         .background(Color.brandSecondary.ignoresSafeArea())
         .navigationTitle("My Account")
         .navigationBarTitleDisplayMode(.large)
+        .sheet(isPresented: $showingReasonSheet) {
+            DeleteAccountReasonSheet { reason in
+                selectedDeletionReason = reason
+            }
+        }
+        .onChange(of: selectedDeletionReason) { _, reason in
+            guard reason != nil else { return }
+            showingDeleteConfirmation = true
+        }
         .confirmationDialog("Delete Account?", isPresented: $showingDeleteConfirmation, titleVisibility: .visible) {
             Button("Delete Account", role: .destructive) {
                 isDeleting = true
                 Task {
                     do {
-                        try await authService.deleteAccount()
+                        try await authService.deleteAccount(reason: selectedDeletionReason ?? "")
                     } catch {
                         deleteError = error.localizedDescription
                     }
@@ -518,6 +529,122 @@ private struct MyAccountView: View {
         } message: {
             Text(deleteError ?? "")
         }
+    }
+}
+
+// MARK: - Delete Account Reason Sheet
+
+private struct DeleteAccountReasonSheet: View {
+    var onSelect: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedReason: String? = nil
+
+    private let reasons = [
+        "I don't use qwip anymore",
+        "Found a better alternative",
+        "Moving out of London",
+        "Technical issues",
+        "Other"
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Help us improve")
+                        .font(.dmSans(14))
+                        .foregroundStyle(Color.brandPrimary.opacity(0.5))
+                        .padding(.horizontal, 24)
+                        .padding(.top, 16)
+                        .padding(.bottom, 12)
+
+                    VStack(spacing: 0) {
+                        ForEach(Array(reasons.enumerated()), id: \.offset) { index, reason in
+                            if index > 0 {
+                                Divider().overlay(Color.brandBorder)
+                            }
+                            reasonRow(reason)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                    .background(glassBackground(cornerRadius: 20))
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .shadow(color: Color.brandPrimary.opacity(0.08), radius: 24, x: 0, y: 8)
+                    .padding(.horizontal, 24)
+
+                    Button {
+                        guard let reason = selectedReason else { return }
+                        onSelect(reason)
+                        dismiss()
+                    } label: {
+                        Text("Continue")
+                            .font(.dmSans(14, weight: .black))
+                            .tracking(0.3)
+                            .foregroundStyle(Color.brandSecondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 13)
+                            .background(Color.brandPrimary.opacity(selectedReason != nil ? 1 : 0.4))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(selectedReason == nil)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 20)
+                }
+                .padding(.bottom, 40)
+            }
+            .background(Color.brandSecondary.ignoresSafeArea())
+            .navigationTitle("Why are you leaving?")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 13, weight: .semibold))
+                            Text("Cancel")
+                                .font(.dmSans(15))
+                        }
+                        .foregroundStyle(Color.brandPrimary)
+                    }
+                }
+            }
+        }
+    }
+
+    private func reasonRow(_ reason: String) -> some View {
+        let selected = selectedReason == reason
+        return Button {
+            selectedReason = reason
+        } label: {
+            HStack {
+                Text(reason)
+                    .font(.dmSans(14, weight: .semibold))
+                    .foregroundStyle(Color.brandPrimary)
+                Spacer()
+                ZStack {
+                    Circle()
+                        .stroke(selected ? Color.clear : Color.brandBorder, lineWidth: 1.5)
+                        .frame(width: 22, height: 22)
+                    if selected {
+                        Circle()
+                            .fill(Color.brandPrimary)
+                            .frame(width: 22, height: 22)
+                        Image("ic_check")
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 10, height: 10)
+                            .foregroundStyle(Color.brandSecondary)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(selected ? Color.brandPrimary.opacity(0.05) : Color.clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }
 
