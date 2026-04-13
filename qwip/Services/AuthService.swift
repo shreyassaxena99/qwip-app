@@ -249,11 +249,6 @@ private struct PatchMeBody: Encodable {
 struct MeResponse: Decodable {
     let displayName: String
     let emailOptIn: Bool
-
-    enum CodingKeys: String, CodingKey {
-        case displayName = "display_name"
-        case emailOptIn  = "email_opt_in"
-    }
 }
 
 // MARK: - Nonce Helpers
