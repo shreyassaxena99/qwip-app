@@ -53,16 +53,16 @@ struct SearchOverlay: View {
             .opacity(panelVisible ? 1 : 0)
         }
         .onAppear {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                panelVisible = true
+            // Defer to next runloop to escape any active tab-switch animation transaction,
+            // otherwise the spring animation gets swallowed and the panel stays invisible.
+            DispatchQueue.main.async {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    panelVisible = true
+                }
             }
-            // Small delay so the panel animation is visible before keyboard appears
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 inputFocused = true
             }
-        }
-        .onDisappear {
-            panelVisible = false
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: searchViewModel.results.count)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: searchViewModel.selectedPlace?.id)
