@@ -497,6 +497,8 @@ private struct MyAccountView: View {
         .navigationTitle("My Account")
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showingReasonSheet, onDismiss: {
+            // Reset so onChange re-fires if the user cancels and tries again with the same reason.
+            // Skip reset if the confirmation dialog is already queued (reason was successfully selected).
             if !showingDeleteConfirmation {
                 selectedDeletionReason = nil
             }
