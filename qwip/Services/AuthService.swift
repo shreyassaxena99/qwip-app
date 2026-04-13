@@ -213,7 +213,7 @@ final class AuthService {
 
     // MARK: - Delete Account
 
-    func deleteAccount() async throws {
+    func deleteAccount(reason: String) async throws {
         guard let token = supabase.auth.currentSession?.accessToken else {
             throw AuthError.notAuthenticated
         }
@@ -221,6 +221,8 @@ final class AuthService {
         var req = URLRequest(url: url)
         req.httpMethod = "DELETE"
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(DeleteMeBody(reason: reason))
         let (_, response) = try await URLSession.shared.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200...299).contains(status) else { throw AuthError.deleteAccountFailed(status) }
@@ -229,6 +231,10 @@ final class AuthService {
 }
 
 // MARK: - Profile request/response
+
+private struct DeleteMeBody: Encodable {
+    let reason: String
+}
 
 private struct PatchMeBody: Encodable {
     let displayName: String?
