@@ -142,6 +142,24 @@ final class AuthService {
 
     // MARK: - Profile
 
+    func fetchMe() async throws -> MeResponse {
+        guard let token = supabase.auth.currentSession?.accessToken else {
+            throw AuthError.notAuthenticated
+        }
+        let url = URL(string: "https://spotsvc.up.railway.app/me")!
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let body = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+        print("[AuthService] GET /me → \(status): \(body)")
+        guard (200...299).contains(status) else { throw AuthError.fetchMeFailed(status) }
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try decoder.decode(MeResponse.self, from: data)
+    }
+
     func updateProfile(displayName: String? = nil, emailOptIn: Bool? = nil) async throws {
         guard let token = supabase.auth.currentSession?.accessToken else {
             throw AuthError.notAuthenticated
@@ -151,11 +169,17 @@ final class AuthService {
         req.httpMethod = "PATCH"
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try JSONEncoder().encode(PatchMeBody(displayName: displayName, emailOptIn: emailOptIn))
+        let bodyData = try JSONEncoder().encode(PatchMeBody(displayName: displayName, emailOptIn: emailOptIn))
+        req.httpBody = bodyData
+        print("[AuthService] PATCH /me → body: \(String(data: bodyData, encoding: .utf8) ?? "<non-utf8>")")
         let (data, response) = try await URLSession.shared.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let responseBody = String(data: data, encoding: .utf8) ?? "<non-utf8>"
+        print("[AuthService] PATCH /me ← \(status): \(responseBody)")
         guard (200...299).contains(status) else { throw AuthError.updateProfileFailed(status) }
-        let me = try JSONDecoder().decode(MeResponse.self, from: data)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let me = try decoder.decode(MeResponse.self, from: data)
         _displayName = me.displayName
         self.emailOptIn = me.emailOptIn
     }
@@ -222,7 +246,7 @@ private struct PatchMeBody: Encodable {
     }
 }
 
-private struct MeResponse: Decodable {
+struct MeResponse: Decodable {
     let displayName: String
     let emailOptIn: Bool
 
@@ -270,6 +294,7 @@ enum AuthError: LocalizedError {
     case notAuthenticated
     case deleteAccountFailed(Int)
     case updateProfileFailed(Int)
+    case fetchMeFailed(Int)
 
     var errorDescription: String? {
         switch self {
@@ -285,6 +310,8 @@ enum AuthError: LocalizedError {
             return "Account deletion failed (server error \(code)). Please try again."
         case .updateProfileFailed(let code):
             return "Couldn't save your changes (server error \(code)). Please try again."
+        case .fetchMeFailed(let code):
+            return "Couldn't fetch profile (server error \(code))."
         }
     }
 }
