@@ -58,7 +58,6 @@ struct MapTourOverlay: View {
         VStack {
             Spacer().frame(height: geo.size.height * 0.42)
             tooltipCard(
-                emoji: "📍",
                 headline: "Explore the map",
                 body: "Tap any green pin to discover a work-friendly spot near you.",
                 buttonLabel: "Next →",
@@ -78,7 +77,6 @@ struct MapTourOverlay: View {
             VStack {
                 Spacer().frame(height: geo.size.height * 0.28)
                 tooltipCard(
-                    emoji: "❤️",
                     headline: "Save spots",
                     body: "Tap the heart on any spot to save it. Find all your saved spots in the Saved tab below.",
                     buttonLabel: "Got it ✓",
@@ -170,18 +168,85 @@ struct MapTourOverlay: View {
                         .buttonStyle(.plain)
                     }
                 }
+
+                // Stats row
+                HStack(spacing: 0) {
+                    previewStatChip(icon: "ic_star", iconColor: .orange, value: spot.formattedRating, label: "RATING")
+                    if let noise = spot.noiseMatrix?.currentLevel() {
+                        previewDivider()
+                        previewStatChip(icon: noise.iconName, iconColor: Color.brandPrimary, value: noise.displayName, label: "USUALLY")
+                    }
+                    if spot.wifiAvailable {
+                        previewDivider()
+                        previewStatChip(icon: "ic_wifi", iconColor: Color.brandPrimary, value: "Wi-Fi", label: "AVAIL")
+                    }
+                }
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.brandPrimary.opacity(0.05))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Color.brandPrimary.opacity(0.1), lineWidth: 1)
+                        )
+                )
+
+                // View Spot button (inert in tour context)
+                HStack(spacing: 8) {
+                    Text("View Spot")
+                        .font(.dmSans(15, weight: .black))
+                        .tracking(0.3)
+                    Image("ic_arrow_right")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 13, height: 13)
+                }
+                .foregroundStyle(Color.brandSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color.brandPrimary)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .shadow(color: Color.brandPrimary.opacity(0.4), radius: 10, x: 0, y: 4)
             }
-            .padding(16)
+            .padding(18)
         }
-        .background(glassBackground(cornerRadius: 22))
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .shadow(color: Color.brandPrimary.opacity(0.15), radius: 20, x: 0, y: 8)
+        .background(glassBackground(cornerRadius: 24))
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: Color.brandPrimary.opacity(0.14), radius: 24, x: 0, y: 8)
+        .shadow(color: .black.opacity(0.07), radius: 6, x: 0, y: 2)
+    }
+
+    private func previewStatChip(icon: String, iconColor: Color, value: String, label: String) -> some View {
+        VStack(spacing: 2) {
+            Image(icon)
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 10, height: 10)
+                .foregroundStyle(iconColor)
+            Text(value)
+                .font(.dmSans(12, weight: .heavy))
+                .foregroundStyle(Color.brandPrimary)
+                .lineLimit(1)
+            Text(label)
+                .font(.dmSans(7, weight: .bold))
+                .tracking(0.4)
+                .foregroundStyle(Color.brandPrimary.opacity(0.4))
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func previewDivider() -> some View {
+        Rectangle()
+            .fill(Color.brandPrimary.opacity(0.12))
+            .frame(width: 1)
+            .padding(.vertical, 4)
     }
 
     // MARK: - Shared tooltip card
 
     private func tooltipCard(
-        emoji: String,
         headline: String,
         body: String,
         buttonLabel: String,
@@ -189,13 +254,9 @@ struct MapTourOverlay: View {
         action: @escaping () -> Void
     ) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Text(emoji)
-                    .font(.system(size: 22))
-                Text(headline)
-                    .font(.dmSans(15, weight: .heavy))
-                    .foregroundStyle(Color.brandSecondary)
-            }
+            Text(headline)
+                .font(.dmSans(15, weight: .heavy))
+                .foregroundStyle(Color.brandSecondary)
 
             Text(body)
                 .font(.dmSans(13))

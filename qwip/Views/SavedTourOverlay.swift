@@ -11,13 +11,9 @@ struct SavedTourOverlay: View {
                         .ignoresSafeArea()
 
                     VStack(alignment: .leading, spacing: 10) {
-                        HStack(spacing: 8) {
-                            Text("🗂️")
-                                .font(.system(size: 22))
-                            Text("Collections")
-                                .font(.dmSans(15, weight: .heavy))
-                                .foregroundStyle(Color.brandSecondary)
-                        }
+                        Text("Collections")
+                            .font(.dmSans(15, weight: .heavy))
+                            .foregroundStyle(Color.brandSecondary)
 
                         Text("Group saved spots into themed collections — by area, vibe, or whatever works for you.")
                             .font(.dmSans(13))
