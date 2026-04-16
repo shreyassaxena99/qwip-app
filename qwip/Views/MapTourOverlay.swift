@@ -149,7 +149,7 @@ struct MapTourOverlay: View {
             body: "Tap a pin to see opening hours, wifi quality, noise level, and directions."
         ),
         StepConfig(
-            emoji: "♥️",
+            emoji: "❤️",
             headline: "Save spots",
             body: "Tap the heart on any spot to save it. Find all your saved spots in the Saved tab below."
         ),
