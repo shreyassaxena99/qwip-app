@@ -60,6 +60,17 @@ struct ContentView: View {
         .onChange(of: appRouter.pendingCollectionId) { _, id in
             if id != nil { selectedTab = 1 }
         }
+        .fullScreenCover(isPresented: Binding(
+            get: { appRouter.pendingSharedCollectionId != nil },
+            set: { if !$0 { appRouter.pendingSharedCollectionId = nil } }
+        )) {
+            if let id = appRouter.pendingSharedCollectionId {
+                SharedCollectionSheet(collectionId: id)
+                    .environment(collectionService)
+                    .environment(savedSpotService)
+                    .environment(appRouter)
+            }
+        }
         .onChange(of: selectedTab) { old, new in
             guard new != old else { return }
             if new == 3 {
