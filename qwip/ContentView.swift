@@ -47,6 +47,9 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.22), value: searchViewModel.isSearchActive)
+        .overlay {
+            MapTourOverlay()
+        }
         .environment(store)
         .environment(locationService)
         .environment(savedSpotService)
@@ -69,6 +72,7 @@ struct ContentView: View {
                     .environment(collectionService)
                     .environment(savedSpotService)
                     .environment(appRouter)
+                    .environment(locationService)
             }
         }
         .onChange(of: selectedTab) { old, new in
