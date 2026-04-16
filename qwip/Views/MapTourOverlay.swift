@@ -5,8 +5,24 @@ struct MapTourOverlay: View {
     @AppStorage("hasSeenMapTour") private var hasSeenMapTour = false
     @State private var step = 0
 
-    @Environment(SpotStore.self) private var spotStore
     @Environment(SavedSpotService.self) private var savedSpotService
+
+    // Hardcoded preview spot — always looks right regardless of network state
+    private static let previewSpot = SpotPin(
+        id: "tour-preview",
+        name: "Monmouth Coffee",
+        shortAddress: "27 Monmouth St, London",
+        latitude: 51.5125,
+        longitude: -0.1274,
+        category: .cafe,
+        accessType: .free,
+        wifiAvailable: true,
+        powerOutlets: true,
+        noiseMatrix: nil,
+        rating: 4.8,
+        isOpenNow: true,
+        coverPhoto: nil
+    )
 
     var body: some View {
         ZStack {
@@ -88,12 +104,10 @@ struct MapTourOverlay: View {
             }
 
             // Preview card pinned to the bottom, mirroring the real map tile
-            if let spot = spotStore.spots.first {
-                spotPreviewTile(spot)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 24)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+            spotPreviewTile(Self.previewSpot)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 24)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
 
