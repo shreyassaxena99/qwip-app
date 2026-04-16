@@ -94,7 +94,9 @@ struct CollectionAPIClient {
     /// GET /collections/{id} — no auth required.
     /// Throws CollectionAPIError.serverError(404) if collection doesn't exist or isn't shareable.
     func fetchShared(id: String) async throws -> SharedCollection {
-        let url = baseURL.appendingPathComponent("collections/\(id)")
+        let url = baseURL
+            .appendingPathComponent("collections")
+            .appendingPathComponent(id)
         var req = URLRequest(url: url)
         req.httpMethod = "GET"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
