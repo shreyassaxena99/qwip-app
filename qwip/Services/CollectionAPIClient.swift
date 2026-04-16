@@ -91,6 +91,23 @@ struct CollectionAPIClient {
         }
     }
 
+    /// GET /collections/{id} — no auth required.
+    /// Throws CollectionAPIError.serverError(404) if collection doesn't exist or isn't shareable.
+    func fetchShared(id: String) async throws -> SharedCollection {
+        let url = baseURL.appendingPathComponent("collections/\(id)")
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let (data, response) = try await URLSession.shared.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200...299).contains(status) else { throw CollectionAPIError.serverError(status) }
+        do {
+            return try decoder.decode(SharedCollection.self, from: data)
+        } catch {
+            throw CollectionAPIError.decodingError(error)
+        }
+    }
+
     /// POST /me/collections
     func createCollection(name: String, description: String?, isShareable: Bool) async throws -> Collection {
         let url = baseURL.appendingPathComponent("me/collections")
