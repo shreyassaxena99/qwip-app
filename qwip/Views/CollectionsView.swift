@@ -83,6 +83,9 @@ struct CollectionsView: View {
             .navigationTitle("Saved")
             .navigationBarTitleDisplayMode(.large)
             .background(Color.brandSecondary.ignoresSafeArea())
+            .overlay {
+                SavedTourOverlay()
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showCreateSheet = true } label: {
