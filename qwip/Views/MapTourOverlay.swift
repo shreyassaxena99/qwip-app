@@ -5,16 +5,19 @@ struct MapTourOverlay: View {
     @State private var step = 0
 
     var body: some View {
-        if !hasSeenMapTour {
-            GeometryReader { geo in
-                ZStack {
-                    spotlightMask(geo: geo)
-                    tooltipCard(geo: geo)
+        ZStack {
+            if !hasSeenMapTour {
+                GeometryReader { geo in
+                    ZStack {
+                        spotlightMask(geo: geo)
+                        tooltipCard(geo: geo)
+                    }
                 }
+                .ignoresSafeArea()
+                .transition(.opacity)
             }
-            .ignoresSafeArea()
-            .transition(.opacity.animation(.easeInOut(duration: 0.3)))
         }
+        .animation(.easeInOut(duration: 0.3), value: hasSeenMapTour)
     }
 
     // MARK: - Spotlight
@@ -81,7 +84,7 @@ struct MapTourOverlay: View {
 
                 HStack(alignment: .center) {
                     Button("Skip tour") {
-                        withAnimation { hasSeenMapTour = true }
+                        withAnimation(.easeInOut(duration: 0.3)) { hasSeenMapTour = true }
                     }
                     .font(.dmSans(12, weight: .semibold))
                     .foregroundStyle(Color.brandSecondary.opacity(0.4))
@@ -104,9 +107,9 @@ struct MapTourOverlay: View {
 
                     Button {
                         if step < 2 {
-                            withAnimation { step += 1 }
+                            withAnimation(.easeInOut(duration: 0.2)) { step += 1 }
                         } else {
-                            withAnimation { hasSeenMapTour = true }
+                            withAnimation(.easeInOut(duration: 0.3)) { hasSeenMapTour = true }
                         }
                     } label: {
                         Text(step < 2 ? "Next →" : "Got it ✓")
