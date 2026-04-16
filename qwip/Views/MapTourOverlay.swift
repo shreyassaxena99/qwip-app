@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MapTourOverlay: View {
+    var firstPinPosition: CGPoint? = nil
     @AppStorage("hasSeenMapTour") private var hasSeenMapTour = false
     @State private var step = 0
 
@@ -39,9 +40,10 @@ struct MapTourOverlay: View {
     private func spotlightRect(geo: GeometryProxy) -> CGRect? {
         switch step {
         case 0:
-            // Circular spotlight over the pin cluster area (upper-centre of map)
-            let cx = geo.size.width * 0.5
-            let cy = geo.size.height * 0.3
+            // Use the actual position of the first rendered pin, falling back to
+            // an approximate centre-of-map position if pins haven't loaded yet.
+            let cx = firstPinPosition?.x ?? geo.size.width * 0.5
+            let cy = firstPinPosition?.y ?? geo.size.height * 0.35
             let r: CGFloat = 36
             return CGRect(x: cx - r, y: cy - r, width: r * 2, height: r * 2)
         default:

@@ -23,6 +23,7 @@ struct ContentView: View {
     @State private var collectionService = CollectionService()
     @State private var selectedTab = 0
     @State private var searchViewModel = SearchViewModel()
+    @State private var firstPinPosition: CGPoint? = nil
     @Environment(AppRouter.self) var appRouter
 
     var body: some View {
@@ -48,8 +49,9 @@ struct ContentView: View {
         }
         .animation(.easeInOut(duration: 0.22), value: searchViewModel.isSearchActive)
         .overlay {
-            MapTourOverlay()
+            MapTourOverlay(firstPinPosition: firstPinPosition)
         }
+        .onPreferenceChange(FirstPinPositionKey.self) { firstPinPosition = $0 }
         .environment(store)
         .environment(locationService)
         .environment(savedSpotService)

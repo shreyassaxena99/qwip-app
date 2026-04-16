@@ -145,7 +145,10 @@ struct SpotRow: View {
                 .frame(width: 11, height: 11)
                 .foregroundStyle(Color.brandPrimary.opacity(0.25))
         }
-        .padding(.vertical, 4)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(glassBackground(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
@@ -174,6 +177,17 @@ struct OpenBadge: View {
     }
 }
 
+// MARK: - First pin position preference key
+
+/// Bubbles the screen-centre of the first rendered SpotAnnotationView up to ContentView
+/// so MapTourOverlay can spotlight an actual pin instead of a hardcoded position.
+struct FirstPinPositionKey: PreferenceKey {
+    static var defaultValue: CGPoint? = nil
+    static func reduce(value: inout CGPoint?, nextValue: () -> CGPoint?) {
+        if value == nil { value = nextValue() }
+    }
+}
+
 // MARK: - Spot Annotation View
 
 struct SpotAnnotationView: View {
@@ -198,7 +212,7 @@ struct SpotAnnotationView: View {
                     .fill(isSelected ? Color.brandSecondary : Color.brandPrimary)
                     .frame(width: isSelected ? 44 : 36, height: isSelected ? 44 : 36)
                     .shadow(
-                        color: isSelected ? Color.brandSecondary.opacity(0.5) : Color.brandPrimary.opacity(0.4),
+                        color: isSelected ? Color.brandPrimary.opacity(0.2) : Color.brandPrimary.opacity(0.4),
                         radius: 6, x: 0, y: 2
                     )
                     .overlay(
@@ -221,6 +235,14 @@ struct SpotAnnotationView: View {
                 .frame(width: 10, height: 6)
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+        .background(
+            GeometryReader { geo in
+                Color.clear.preference(
+                    key: FirstPinPositionKey.self,
+                    value: CGPoint(x: geo.frame(in: .global).midX, y: geo.frame(in: .global).midY)
+                )
+            }
+        )
     }
 }
 
