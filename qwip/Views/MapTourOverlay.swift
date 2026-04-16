@@ -88,8 +88,8 @@ struct MapTourOverlay: View {
     // MARK: - Step 1: preview card + save tooltip
 
     private func saveStep(geo: GeometryProxy) -> some View {
-        ZStack(alignment: .bottom) {
-            // Save spots tooltip in the upper half
+        ZStack {
+            // Tooltip positioned in the upper half
             VStack {
                 Spacer().frame(height: geo.size.height * 0.28)
                 tooltipCard(
@@ -103,11 +103,14 @@ struct MapTourOverlay: View {
                 Spacer()
             }
 
-            // Preview card pinned to the bottom, mirroring the real map tile
-            spotPreviewTile(Self.previewSpot)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 24)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+            // Preview card pushed to the bottom
+            VStack {
+                Spacer()
+                spotPreviewTile(Self.previewSpot)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 24)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
     }
 
