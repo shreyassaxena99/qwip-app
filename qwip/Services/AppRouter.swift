@@ -4,6 +4,7 @@ import Observation
 @Observable
 final class AppRouter {
     var pendingCollectionId: String? = nil
+    var pendingSharedCollectionId: String? = nil
 
     /// Extracts a collection ID from a Universal Link URL.
     /// Returns nil for Google OAuth callbacks or any unrecognised URL.

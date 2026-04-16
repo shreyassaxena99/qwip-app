@@ -13,37 +13,40 @@ struct CollectionsView: View {
     @State private var actionError: String? = nil
 
     private enum CollectionDestination: Hashable {
-        case favourites
         case collection(Collection)
-    }
-
-    private var favouriteCount: Int {
-        savedSpotService.savedEntries.filter { $0.collectionIds.isEmpty }.count
     }
 
     var body: some View {
         NavigationStack(path: $navPath) {
             Group {
-                if collectionService.isLoading && collectionService.collections.isEmpty
-                    && savedSpotService.savedEntries.isEmpty {
+                if collectionService.isLoading && collectionService.collections.isEmpty {
                     loadingView
                 } else if let error = collectionService.loadError ?? savedSpotService.loadError {
                     errorView(message: error)
                 } else {
                     List {
-                        // Favourite Spots — pinned first, no swipe
-                        NavigationLink(value: CollectionDestination.favourites) {
-                            CollectionRow(name: "Favourite Spots", icon: "star.fill",
-                                          count: favouriteCount)
+                        // Default collection (Favourite Spots) — pinned first, no swipe actions
+                        if let defaultCollection = collectionService.collections.first(where: { $0.isDefault }) {
+                            NavigationLink(value: CollectionDestination.collection(defaultCollection)) {
+                                CollectionRow(name: defaultCollection.name, icon: "star.fill",
+                                              count: savedSpotService.savedEntries.count)
+                            }
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(.init(top: 4, leading: 16, bottom: 4, trailing: 16))
                         }
 
-                        // Real collections
-                        ForEach(collectionService.collections) { collection in
+                        // Custom collections
+                        ForEach(collectionService.collections.filter { !$0.isDefault }) { collection in
                             NavigationLink(value: CollectionDestination.collection(collection)) {
                                 CollectionRow(name: collection.name, icon: "folder.fill",
                                               count: collection.spotCount,
-                                              isShareable: collection.isShareable)
+                                              isShareable: collection.isShareable,
+                                              description: collection.collectionDescription)
                             }
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(.init(top: 4, leading: 16, bottom: 4, trailing: 16))
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
                                     deleteTarget = collection
@@ -59,14 +62,12 @@ struct CollectionsView: View {
                             }
                         }
                     }
-                    .listStyle(.insetGrouped)
+                    .listStyle(.plain)
                     .scrollContentBackground(.hidden)
                 }
             }
             .navigationDestination(for: CollectionDestination.self) { destination in
                 switch destination {
-                case .favourites:
-                    CollectionDetailView(source: .favourites)
                 case .collection(let collection):
                     CollectionDetailView(source: .collection(collection))
                 }
@@ -150,10 +151,20 @@ struct CollectionsView: View {
     // MARK: - Deep link handling
 
     private func handlePendingDeepLink() {
-        guard let id = appRouter.pendingCollectionId,
-              let collection = collectionService.collections.first(where: { $0.id == id })
-        else { return }
-        navPath.append(CollectionDestination.collection(collection))
+        guard let id = appRouter.pendingCollectionId else { return }
+
+        // Own collection — navigate directly (existing behaviour)
+        if let collection = collectionService.collections.first(where: { $0.id == id }) {
+            navPath.append(CollectionDestination.collection(collection))
+            appRouter.pendingCollectionId = nil
+            return
+        }
+
+        // Collections still loading — wait for the onChange(of: collectionService.collections) trigger
+        guard !collectionService.isLoading else { return }
+
+        // Not the user's collection — hand off to the shared collection sheet
+        appRouter.pendingSharedCollectionId = id
         appRouter.pendingCollectionId = nil
     }
 
@@ -201,6 +212,7 @@ private struct CollectionRow: View {
     let icon: String
     let count: Int
     var isShareable: Bool = false
+    var description: String? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -223,12 +235,22 @@ private struct CollectionRow: View {
                             .foregroundStyle(Color.brandPrimary.opacity(0.45))
                     }
                 }
-                Text("\(count) spot\(count == 1 ? "" : "s")")
-                    .font(.dmSans(12))
-                    .foregroundStyle(Color.brandPrimary.opacity(0.5))
+                if let description, !description.isEmpty {
+                    Text(description)
+                        .font(.dmSans(12))
+                        .foregroundStyle(Color.brandPrimary.opacity(0.5))
+                        .lineLimit(1)
+                } else {
+                    Text("\(count) spot\(count == 1 ? "" : "s")")
+                        .font(.dmSans(12))
+                        .foregroundStyle(Color.brandPrimary.opacity(0.5))
+                }
             }
         }
-        .padding(.vertical, 4)
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(glassBackground(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
