@@ -221,27 +221,34 @@ struct SharedCollectionSheet: View {
     private func saveAsCopy() async {
         guard let collection else { return }
         let name = copyName.trimmingCharacters(in: .whitespaces)
-        guard !name.isEmpty else { return }
+        guard !name.isEmpty else {
+            saveError = "Please enter a name for the collection."
+            return
+        }
         isSaving = true
+        var created: Collection? = nil
         do {
-            // Create the new collection (optimistic — immediately appears in collectionService.collections)
-            let created = try await collectionService.create(name: name)
+            created = try await collectionService.create(name: name)
+            guard let created else { return }
 
-            // Add each spot; also saves any unsaved spots as a side-effect
             for spot in collection.spots {
                 _ = try await CollectionAPIClient.shared.addSpotToCollection(
                     collectionId: created.id, spotId: spot.id)
             }
 
-            // Refresh both services so saved state + collection spot count are accurate
             async let savedLoad: () = savedSpotService.load()
             async let collectionsLoad: () = collectionService.load()
             _ = await (savedLoad, collectionsLoad)
 
-            // Dismiss this sheet, then navigate to the new collection via the existing deep-link path
+            isSaving = false
             appRouter.pendingSharedCollectionId = nil
             appRouter.pendingCollectionId = created.id
         } catch {
+            // Best-effort cleanup if collection was created but spot-add failed partway through
+            if let created {
+                try? await CollectionAPIClient.shared.deleteCollection(id: created.id)
+                await collectionService.load()
+            }
             isSaving = false
             saveError = error.localizedDescription
         }
