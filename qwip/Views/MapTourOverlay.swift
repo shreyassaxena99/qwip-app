@@ -107,6 +107,7 @@ struct MapTourOverlay: View {
             VStack {
                 Spacer()
                 spotPreviewTile(Self.previewSpot)
+                    .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 24)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
