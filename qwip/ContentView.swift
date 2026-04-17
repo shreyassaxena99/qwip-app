@@ -25,6 +25,7 @@ struct ContentView: View {
     @State private var searchViewModel = SearchViewModel()
     @State private var firstPinPosition: CGPoint? = nil
     @Environment(AppRouter.self) var appRouter
+    @AppStorage("analyticsConsentDecided") private var analyticsConsentDecided = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -94,6 +95,12 @@ struct ContentView: View {
         }
         .onChange(of: searchViewModel.selectedRadius) { _, radius in
             if radius != nil { selectedTab = 0 }
+        }
+        .sheet(isPresented: Binding(
+            get: { !analyticsConsentDecided },
+            set: { _ in }
+        )) {
+            AnalyticsConsentSheet()
         }
     }
 }
