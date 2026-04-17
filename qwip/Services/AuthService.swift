@@ -15,6 +15,7 @@ final class AuthService {
     private var _displayName: String? = nil
     var emailOptIn: Bool = false
     private(set) var needsOnboarding: Bool = false
+    private(set) var needsAnalyticsConsent: Bool = false
 
     var isAuthenticated: Bool {
         session != nil
@@ -36,9 +37,11 @@ final class AuthService {
                 self.session = session
                 if session == nil {
                     needsOnboarding = false
+                    needsAnalyticsConsent = false
                 } else if event == .signedIn || event == .initialSession, let session {
                     await checkOnboardingStatus(session: session)
-                    identify(userId: session.user.id.uuidString)
+                    await loadProfile()
+                    checkAnalyticsConsent(userId: session.user.id.uuidString)
                 }
             }
         }
@@ -201,14 +204,41 @@ final class AuthService {
         needsOnboarding = !exists
     }
 
+    private func loadProfile() async {
+        do {
+            let me = try await fetchMe()
+            print("[AuthService] loadProfile decoded → displayName=\(me.displayName), emailOptIn=\(me.emailOptIn)")
+            _displayName = me.displayName
+            emailOptIn = me.emailOptIn
+        } catch {
+            print("[AuthService] loadProfile failed to decode MeResponse: \(error)")
+        }
+    }
+
     func completeOnboarding() {
         needsOnboarding = false
     }
 
-    // MARK: - Analytics
+    private func checkAnalyticsConsent(userId: String) {
+        guard AnalyticsConsentKey.isDecided(for: userId) else {
+            needsAnalyticsConsent = true
+            return
+        }
+        needsAnalyticsConsent = false
+        if AnalyticsConsentKey.isAccepted(for: userId) {
+            PostHogSDK.shared.optIn()
+        }
+    }
 
-    func identify(userId: String) {
-        PostHogSDK.shared.identify(userId, userProperties: [:])
+    func recordAnalyticsConsent(accepted: Bool) {
+        guard let userId = session?.user.id.uuidString else { return }
+        AnalyticsConsentKey.record(accepted: accepted, for: userId)
+        needsAnalyticsConsent = false
+        if accepted {
+            PostHogSDK.shared.optIn()
+        } else {
+            PostHogSDK.shared.optOut()
+        }
     }
 
     // MARK: - Delete Account
@@ -253,7 +283,7 @@ private struct PatchMeBody: Encodable {
 }
 
 struct MeResponse: Decodable {
-    let displayName: String
+    let displayName: String?
     let emailOptIn: Bool
 }
 
