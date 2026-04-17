@@ -18,13 +18,6 @@ struct qwipApp: App {
         postHogConfig.optOut = true
         PostHogSDK.shared.setup(postHogConfig)
 
-        // Apply stored consent immediately after setup
-        let consentDecided = UserDefaults.standard.bool(forKey: AnalyticsConsentKey.decided)
-        let consentAccepted = UserDefaults.standard.bool(forKey: AnalyticsConsentKey.accepted)
-        if consentDecided && consentAccepted {
-            PostHogSDK.shared.optIn()
-        }
-
         // Font registration
         let fontFiles = [
             "FunnelDisplay-Regular.ttf",
