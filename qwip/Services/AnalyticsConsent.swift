@@ -16,5 +16,4 @@ enum AnalyticsConsentKey {
     static func record(accepted: Bool, for userId: String) {
         UserDefaults.standard.set(accepted, forKey: storageKey(for: userId))
     }
-
 }
