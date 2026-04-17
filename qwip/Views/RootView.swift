@@ -15,6 +15,10 @@ struct RootView: View {
                 OnboardingView()
                     .transition(.opacity)
                     .zIndex(1)
+            } else if authService.needsAnalyticsConsent {
+                AnalyticsConsentView()
+                    .transition(.opacity)
+                    .zIndex(1)
             } else if authService.isAuthenticated {
                 ContentView()
                     .environment(\.signOut) {
@@ -44,6 +48,7 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.45), value: showSplash)
         .animation(.easeInOut(duration: 0.45), value: authService.isAuthenticated)
         .animation(.easeInOut(duration: 0.45), value: authService.needsOnboarding)
+        .animation(.easeInOut(duration: 0.45), value: authService.needsAnalyticsConsent)
         .fullScreenCover(isPresented: Binding(
             get: { pendingOTPEmail != nil },
             set: { if !$0 { pendingOTPEmail = nil } }
