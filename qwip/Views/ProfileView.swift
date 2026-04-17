@@ -1,5 +1,6 @@
 import SwiftUI
 import Supabase
+import PostHog
 
 // MARK: - Profile Field (used by About You sub-view)
 
@@ -78,13 +79,13 @@ struct ProfileView: View {
 
                     // Menu
                     GlassCard {
-                        menuRow("About You",   icon: "ic_user",        color: Color(hex: "1f3d32"), dest: .aboutYou)
+                        menuRow("Personal Details", icon: "ic_user",       color: Color(hex: "1f3d32"), dest: .aboutYou)
                         Divider().overlay(Color.brandBorder).padding(.leading, 44)
-                        menuRow("Preferences", icon: "ic_settings",     color: Color(hex: "5E6AD2"), dest: .preferences)
+                        menuRow("Preferences",     icon: "ic_settings",  color: Color(hex: "5E6AD2"), dest: .preferences)
                         Divider().overlay(Color.brandBorder).padding(.leading, 44)
-                        menuRow("About",       icon: "ic_info",         color: Color(hex: "34C759"), dest: .about)
+                        menuRow("About",            icon: "ic_info",      color: Color(hex: "34C759"), dest: .about)
                         Divider().overlay(Color.brandBorder).padding(.leading, 44)
-                        menuRow("My Account",  icon: "ic_circle_user",  color: Color(hex: "FF9500"), dest: .myAccount)
+                        menuRow("Manage Account",  icon: "ic_circle_user", color: Color(hex: "FF9500"), dest: .myAccount)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -180,7 +181,7 @@ private struct AboutYouView: View {
             .padding(.bottom, 24)
         }
         .background(Color.brandSecondary.ignoresSafeArea())
-        .navigationTitle("About You")
+        .navigationTitle("Personal Details")
         .navigationBarTitleDisplayMode(.large)
         .task { await loadProfile() }
         .alert("Edit Name", isPresented: $showingNameEdit) {
@@ -312,6 +313,8 @@ private struct PreferencesView: View {
     @Environment(AuthService.self) var authService
     @AppStorage("appTheme") private var appTheme = "system"
     @AppStorage("mapStyle") private var mapStyle = "standard"
+    @AppStorage("analyticsConsentDecided") private var analyticsConsentDecided = false
+    @AppStorage("analyticsConsentAccepted") private var analyticsConsentAccepted = false
 
     var body: some View {
         ScrollView {
@@ -335,6 +338,35 @@ private struct PreferencesView: View {
                             }
                         } icon: {
                             GlassIcon(iconName: "ic_mail", color: Color(hex: "1f3d32"))
+                        }
+                    }
+                    .tint(Color.brandPrimary)
+
+                    Divider().overlay(Color.brandBorder).padding(.leading, 44)
+
+                    Toggle(isOn: Binding(
+                        get: { analyticsConsentAccepted },
+                        set: { newValue in
+                            analyticsConsentAccepted = newValue
+                            analyticsConsentDecided = true
+                            if newValue {
+                                PostHogSDK.shared.optIn()
+                            } else {
+                                PostHogSDK.shared.optOut()
+                            }
+                        }
+                    )) {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Analytics")
+                                    .font(.dmSans(14, weight: .bold))
+                                    .foregroundStyle(Color.brandPrimary)
+                                Text("Anonymous usage data")
+                                    .font(.dmSans(12))
+                                    .foregroundStyle(Color.brandPrimary.opacity(0.5))
+                            }
+                        } icon: {
+                            GlassIcon(iconName: "ic_shield_check", color: Color(hex: "34C759"))
                         }
                     }
                     .tint(Color.brandPrimary)
@@ -362,6 +394,32 @@ private struct PreferencesView: View {
                         .pickerStyle(.segmented)
                     } icon: {
                         GlassIcon(iconName: "ic_map", color: Color(hex: "1f3d32"))
+                    }
+                }
+
+                GlassCard {
+                    Link(destination: URL(string: "https://qwip.co.uk/spots/suggest")!) {
+                        HStack {
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Suggest a Spot")
+                                        .font(.dmSans(14, weight: .bold))
+                                        .foregroundStyle(Color.brandPrimary)
+                                    Text("Know somewhere great? Let us know")
+                                        .font(.dmSans(12))
+                                        .foregroundStyle(Color.brandPrimary.opacity(0.5))
+                                }
+                            } icon: {
+                                GlassIcon(iconName: "ic_map_pin", color: Color(hex: "34C759"))
+                            }
+                            Spacer()
+                            Image("ic_arrow_up_right")
+                                .renderingMode(.template)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 11, height: 11)
+                                .foregroundStyle(Color.brandPrimary.opacity(0.25))
+                        }
                     }
                 }
             }
@@ -494,7 +552,7 @@ private struct MyAccountView: View {
             .padding(.bottom, 24)
         }
         .background(Color.brandSecondary.ignoresSafeArea())
-        .navigationTitle("My Account")
+        .navigationTitle("Manage Account")
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showingReasonSheet, onDismiss: {
             // Reset so onChange re-fires if the user cancels and tries again with the same reason.
