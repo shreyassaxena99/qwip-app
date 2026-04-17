@@ -17,7 +17,4 @@ enum AnalyticsConsentKey {
         UserDefaults.standard.set(accepted, forKey: storageKey(for: userId))
     }
 
-    // Legacy per-device constants — still referenced by code being removed in Task 6.
-    static let decided = "analyticsConsentDecided"
-    static let accepted = "analyticsConsentAccepted"
 }

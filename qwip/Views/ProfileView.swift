@@ -1,6 +1,5 @@
 import SwiftUI
 import Supabase
-import PostHog
 
 // MARK: - Profile Field (used by About You sub-view)
 
@@ -313,8 +312,6 @@ private struct PreferencesView: View {
     @Environment(AuthService.self) var authService
     @AppStorage("appTheme") private var appTheme = "system"
     @AppStorage("mapStyle") private var mapStyle = "standard"
-    @AppStorage(AnalyticsConsentKey.decided) private var analyticsConsentDecided = false
-    @AppStorage(AnalyticsConsentKey.accepted) private var analyticsConsentAccepted = false
 
     var body: some View {
         ScrollView {
@@ -345,15 +342,12 @@ private struct PreferencesView: View {
                     Divider().overlay(Color.brandBorder).padding(.leading, 44)
 
                     Toggle(isOn: Binding(
-                        get: { analyticsConsentAccepted },
+                        get: {
+                            guard let userId = authService.session?.user.id.uuidString else { return false }
+                            return AnalyticsConsentKey.isAccepted(for: userId)
+                        },
                         set: { newValue in
-                            analyticsConsentAccepted = newValue
-                            analyticsConsentDecided = true
-                            if newValue {
-                                PostHogSDK.shared.optIn()
-                            } else {
-                                PostHogSDK.shared.optOut()
-                            }
+                            authService.recordAnalyticsConsent(accepted: newValue)
                         }
                     )) {
                         Label {
