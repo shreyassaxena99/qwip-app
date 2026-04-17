@@ -25,7 +25,7 @@ struct ContentView: View {
     @State private var searchViewModel = SearchViewModel()
     @State private var firstPinPosition: CGPoint? = nil
     @Environment(AppRouter.self) var appRouter
-    @AppStorage("analyticsConsentDecided") private var analyticsConsentDecided = false
+    @AppStorage(AnalyticsConsentKey.decided) private var analyticsConsentDecided = false
 
     var body: some View {
         TabView(selection: $selectedTab) {

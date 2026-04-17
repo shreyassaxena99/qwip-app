@@ -19,8 +19,8 @@ struct qwipApp: App {
         PostHogSDK.shared.setup(postHogConfig)
 
         // Apply stored consent immediately after setup
-        let consentDecided = UserDefaults.standard.bool(forKey: "analyticsConsentDecided")
-        let consentAccepted = UserDefaults.standard.bool(forKey: "analyticsConsentAccepted")
+        let consentDecided = UserDefaults.standard.bool(forKey: AnalyticsConsentKey.decided)
+        let consentAccepted = UserDefaults.standard.bool(forKey: AnalyticsConsentKey.accepted)
         if consentDecided && consentAccepted {
             PostHogSDK.shared.optIn()
         }

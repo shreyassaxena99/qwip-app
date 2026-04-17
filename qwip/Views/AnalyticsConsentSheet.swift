@@ -2,8 +2,8 @@ import SwiftUI
 import PostHog
 
 struct AnalyticsConsentSheet: View {
-    @AppStorage("analyticsConsentDecided") private var consentDecided = false
-    @AppStorage("analyticsConsentAccepted") private var consentAccepted = false
+    @AppStorage(AnalyticsConsentKey.decided) private var consentDecided = false
+    @AppStorage(AnalyticsConsentKey.accepted) private var consentAccepted = false
 
     var body: some View {
         VStack(spacing: 0) {

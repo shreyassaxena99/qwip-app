@@ -313,8 +313,8 @@ private struct PreferencesView: View {
     @Environment(AuthService.self) var authService
     @AppStorage("appTheme") private var appTheme = "system"
     @AppStorage("mapStyle") private var mapStyle = "standard"
-    @AppStorage("analyticsConsentDecided") private var analyticsConsentDecided = false
-    @AppStorage("analyticsConsentAccepted") private var analyticsConsentAccepted = false
+    @AppStorage(AnalyticsConsentKey.decided) private var analyticsConsentDecided = false
+    @AppStorage(AnalyticsConsentKey.accepted) private var analyticsConsentAccepted = false
 
     var body: some View {
         ScrollView {
