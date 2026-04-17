@@ -10,12 +10,20 @@ struct qwipApp: App {
     @State private var appRouter = AppRouter()
 
     init() {
-        // PostHog setup
+        // PostHog setup — start opted-out until user decides
         let postHogConfig = PostHogConfig(
             apiKey: Config.postHogAPIKey,
             host: "https://eu.i.posthog.com"
         )
+        postHogConfig.optOut = true
         PostHogSDK.shared.setup(postHogConfig)
+
+        // Apply stored consent immediately after setup
+        let consentDecided = UserDefaults.standard.bool(forKey: "analyticsConsentDecided")
+        let consentAccepted = UserDefaults.standard.bool(forKey: "analyticsConsentAccepted")
+        if consentDecided && consentAccepted {
+            PostHogSDK.shared.optIn()
+        }
 
         // Font registration
         let fontFiles = [
