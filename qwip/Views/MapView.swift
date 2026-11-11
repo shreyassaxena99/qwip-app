@@ -1,5 +1,10 @@
 import SwiftUI
 import MapKit
+import Supabase
+import OSLog
+
+private let podOccupancyLog = Logger(subsystem: Bundle.main.bundleIdentifier ?? "qwip",
+                                     category: "PodOccupancy")
 
 // A group of one or more spots at a given zoom level
 struct SpotCluster: Identifiable {
@@ -9,11 +14,29 @@ struct SpotCluster: Identifiable {
     var isSingle: Bool { spots.count == 1 }
 }
 
+private struct PodMapLocation: Identifiable {
+    let pod: ReservablePod
+    let coordinate: CLLocationCoordinate2D
+    var id: String { pod.id }
+}
+
+private struct PodOccupancy: Decodable {
+    let id: String
+    let inUse: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case inUse = "in_use"
+    }
+}
+
 struct MapView: View {
+    @Environment(AuthService.self) private var authService
     @Environment(SpotStore.self) var store
     @Environment(LocationService.self) var locationService
     @Environment(SearchViewModel.self) var searchViewModel
     @Environment(SavedSpotService.self) var savedSpotService
+    @Environment(\.scenePhase) private var scenePhase
     @State private var position: MapCameraPosition = .region(
         MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 51.5220, longitude: -0.0950),
@@ -23,6 +46,11 @@ struct MapView: View {
     )
     @State private var mapSpan = MKCoordinateSpan(latitudeDelta: 0.04, longitudeDelta: 0.04)
     @State private var selectedSpot: SpotPin? = nil
+    @State private var podLocations: [PodMapLocation] = []
+    @State private var podInUse: [String: Bool] = [:]
+    @State private var selectedPod: ReservablePod? = nil
+    @State private var bookingPod: ReservablePod? = nil
+    @State private var podLoadError: String? = nil
     @State private var detailSpot: SpotDetail? = nil
     @State private var isFetchingDetail = false
     @State private var detailError: String? = nil
@@ -116,7 +144,7 @@ struct MapView: View {
             mapLayer
             filterBarOverlay
             mapControlsOverlay
-            selectedSpotPreview
+            selectedPlacePreview
             if store.isLoading && store.spots.isEmpty {
                 loadingOverlay
             }
@@ -124,6 +152,13 @@ struct MapView: View {
         .task {
             locationService.requestAuthorization()
             await store.loadSpots()
+        }
+        .task(id: authService.session?.user.id) {
+            await loadPodLocations()
+        }
+        .task(id: authService.session?.user.id) { await watchPodOccupancy() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await refreshPodOccupancy() } }
         }
         .onChange(of: locationService.userLocation) { _, location in
             guard let location, !hasSetInitialLocation else { return }
@@ -137,7 +172,11 @@ struct MapView: View {
             }
         }
         .sheet(item: $detailSpot) { detail in
-            SpotDetailView(detail: detail)
+            SpotDetailView(detail: detail,
+                           livePodInUse: detail.podId.flatMap { podInUse[$0] })
+        }
+        .sheet(item: $bookingPod) { pod in
+            NavigationStack { PodBookingView(pod: pod) }
         }
         .sheet(isPresented: $showFilters) {
             FiltersSheet()
@@ -160,6 +199,15 @@ struct MapView: View {
         } message: {
             Text(detailError ?? "")
         }
+        .alert("Couldn't load pods", isPresented: Binding(
+            get: { podLoadError != nil },
+            set: { if !$0 { podLoadError = nil } }
+        )) {
+            Button("Retry") { Task { await loadPodLocations() } }
+            Button("Cancel", role: .cancel) { podLoadError = nil }
+        } message: {
+            Text(podLoadError ?? "")
+        }
     }
 
     // MARK: - Map
@@ -175,6 +223,7 @@ struct MapView: View {
                                 .onTapGesture {
                                     let isSelecting = selectedSpot?.id != spot.id
                                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        selectedPod = nil
                                         if selectedSpot?.id == spot.id {
                                             selectedSpot = nil
                                         } else {
@@ -205,10 +254,21 @@ struct MapView: View {
                     Annotation("", coordinate: cluster.coordinate, anchor: .center) {
                         ClusterAnnotationView(count: cluster.spots.count)
                             .onTapGesture {
-                                withAnimation { selectedSpot = nil }
+                                withAnimation { selectedSpot = nil; selectedPod = nil }
                                 zoomToCluster(cluster)
                             }
                     }
+                }
+            }
+            ForEach(podLocations) { location in
+                Annotation("", coordinate: location.coordinate, anchor: .bottom) {
+                    PodAnnotationView(isSelected: selectedPod?.id == location.pod.id)
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedPod = location.pod
+                                selectedSpot = nil
+                            }
+                        }
                 }
             }
             if let place = searchViewModel.selectedPlace, let radius = searchViewModel.selectedRadius {
@@ -243,7 +303,7 @@ struct MapView: View {
         }
         .ignoresSafeArea()
         .onTapGesture {
-            withAnimation { selectedSpot = nil }
+            withAnimation { selectedSpot = nil; selectedPod = nil }
         }
         .onChange(of: searchViewModel.selectedRadius) { _, radius in
             guard let radius, let place = searchViewModel.selectedPlace else { return }
@@ -423,18 +483,65 @@ struct MapView: View {
         .padding(.top, 80)
     }
 
-    // MARK: - Selected Spot Preview
+    // MARK: - Selected Place Preview
 
-    private var selectedSpotPreview: some View {
+    private var selectedPlacePreview: some View {
         VStack {
             Spacer()
-            if let spot = selectedSpot {
+            if let pod = selectedPod {
+                selectedPodTile(pod)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 24)
+            } else if let spot = selectedSpot {
                 selectedSpotTile(spot)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .padding(.horizontal, 16)
                     .padding(.bottom, 24)
             }
         }
+    }
+
+    private func selectedPodTile(_ pod: ReservablePod) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                Image("ic_pod_door")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(Color(hex: "1F3D32"))
+                    .frame(width: 25, height: 25)
+                    .frame(width: 50, height: 50)
+                    .background(Color.brandTerracotta, in: RoundedRectangle(cornerRadius: 14))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(pod.name).font(.dmSans(18, weight: .heavy))
+                    Text("qwip pod")
+                        .font(.dmSans(9, weight: .black))
+                        .tracking(0.8)
+                        .foregroundStyle(Color.brandPrimary)
+                    Text(pod.address)
+                        .font(.dmSans(11, weight: .medium))
+                        .foregroundStyle(Color.brandPrimary.opacity(0.55))
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 4)
+                PodOccupancyBadge(inUse: podInUse[pod.id] ??
+                    store.spots.first(where: { $0.podId == pod.id })?.isInUse)
+            }
+            Button { bookingPod = pod } label: {
+                Text("Reserve pod")
+                    .font(.dmSans(15, weight: .black))
+                    .foregroundStyle(Color.brandSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.brandPrimary, in: RoundedRectangle(cornerRadius: 14))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(18)
+        .background(glassBackground(cornerRadius: 24))
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .shadow(color: .black.opacity(0.12), radius: 16, y: 6)
     }
 
     private func selectedSpotTile(_ spot: SpotPin) -> some View {
@@ -478,7 +585,11 @@ struct MapView: View {
                     }
                     Spacer()
                     VStack(alignment: .trailing, spacing: 8) {
-                        OpenBadge(isOpen: spot.isOpenNow)
+                        if spot.category == .pod {
+                            PodOccupancyBadge(inUse: spot.podId.flatMap { podInUse[$0] } ?? spot.isInUse)
+                        } else {
+                            OpenBadge(isOpen: spot.isOpenNow)
+                        }
                         Button {
                             Task {
                                 if savedSpotService.isSaved(spot.id) {
@@ -506,7 +617,7 @@ struct MapView: View {
                 }
 
                 HStack(spacing: 0) {
-                    statChip(icon: "ic_star", iconColor: .orange, value: spot.formattedRating, label: "RATING")
+                    statChip(icon: "ic_star", iconColor: Color.brandTerracotta, value: spot.formattedRating, label: "RATING")
                     if let noise = spot.noiseMatrix?.currentLevel() {
                         dividerLine()
                         statChip(icon: noise.iconName, iconColor: Color.brandPrimary, value: noise.displayName, label: "USUALLY")
@@ -594,6 +705,60 @@ struct MapView: View {
 
     // MARK: - Helpers
 
+    private func loadPodLocations() async {
+        podLoadError = nil
+        do {
+            let pods = try await ReservationAPIClient.shared.pods(accessToken: authService.session?.accessToken)
+            var locations: [PodMapLocation] = []
+            for pod in pods {
+                var request = MKLocalSearch.Request()
+                request.naturalLanguageQuery = "\(pod.name), \(pod.address), United Kingdom"
+                request.region = MKCoordinateRegion(
+                    center: CLLocationCoordinate2D(latitude: 51.5072, longitude: -0.1276),
+                    span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.7)
+                )
+                if let coordinate = try? await MKLocalSearch(request: request).start().mapItems.first?.placemark.coordinate {
+                    locations.append(PodMapLocation(pod: pod, coordinate: coordinate))
+                }
+            }
+            podLocations = locations
+            if !pods.isEmpty && locations.isEmpty {
+                podLoadError = "Pod addresses couldn't be located on the map. You can still book from the Pods tab."
+            }
+        } catch {
+            podLoadError = error.localizedDescription
+        }
+    }
+
+    private func refreshPodOccupancy() async {
+        do {
+            let rows: [PodOccupancy] = try await supabase.from("pods")
+                .select("id,in_use")
+                .execute().value
+            podInUse = Dictionary(uniqueKeysWithValues: rows.map { ($0.id, $0.inUse) })
+        } catch {
+            podOccupancyLog.error("Pod occupancy snapshot failed: \(error.localizedDescription, privacy: .private)")
+        }
+    }
+
+    private func watchPodOccupancy() async {
+        let channel = supabase.channel("pod-occupancy-\(UUID().uuidString)")
+        let updates = channel.postgresChange(UpdateAction.self, schema: "public", table: "pods")
+        defer { Task { await supabase.removeChannel(channel) } }
+        do {
+            try await channel.subscribeWithError()
+            await refreshPodOccupancy()
+            for await update in updates {
+                guard let id = update.record["id"]?.stringValue,
+                      let inUse = update.record["in_use"]?.boolValue else { continue }
+                podInUse[id] = inUse
+            }
+        } catch {
+            podOccupancyLog.error("Pod occupancy subscription failed: \(error.localizedDescription, privacy: .private)")
+            await refreshPodOccupancy()
+        }
+    }
+
     private func statChip(icon: String, iconColor: Color, value: String, label: String) -> some View {
         VStack(spacing: 2) {
             Image(icon)
@@ -656,6 +821,32 @@ struct MapView: View {
                 pitch: cam.pitch
             ))
         }
+    }
+}
+
+private struct PodAnnotationView: View {
+    let isSelected: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Image("ic_pod_door")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(Color(hex: "1F3D32"))
+                .frame(width: 21, height: 21)
+                .padding(10)
+                .background(Color.brandTerracotta, in: Capsule())
+                .shadow(color: Color.brandTerracotta.opacity(0.25), radius: 8, y: 3)
+            Image(systemName: "triangle.fill")
+                .font(.system(size: 8))
+                .rotationEffect(.degrees(180))
+                .foregroundStyle(Color.brandTerracotta)
+                .offset(y: -2)
+        }
+        .scaleEffect(isSelected ? 1.15 : 1)
+        .animation(.spring(response: 0.25, dampingFraction: 0.75), value: isSelected)
+        .accessibilityLabel("Qwip pod")
     }
 }
 

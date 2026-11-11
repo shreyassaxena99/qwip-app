@@ -22,6 +22,29 @@ struct qwipTests {
 
     // MARK: - Collection decoding
 
+    @Test func savedPodSpotDecodesFromJSON() throws {
+        let json = """
+        {
+            "spot": {
+                "id": "pod-1", "name": "Qwip Pod", "short_address": "London",
+                "latitude": 51.5, "longitude": -0.1, "category": "pod",
+                "access_type": "purchase_required", "wifi_available": true,
+                "power_outlets": true, "noise_matrix": null, "rating": null,
+                "is_open_now": true, "is_in_use": false,
+                "pod_id": "25993183-3c63-420b-a8cd-be3ce1283226", "cover_photo": null
+            },
+            "saved_at": "2026-11-11T09:00:00.000+0000",
+            "collection_ids": []
+        }
+        """.data(using: .utf8)!
+
+        let entry = try makeDecoder().decode(SavedSpotEntry.self, from: json)
+        #expect(entry.spot.category.rawValue == "pod")
+        #expect(entry.spot.category.displayName == "Pod")
+        #expect(entry.spot.isInUse == false)
+        #expect(entry.spot.podId == "25993183-3c63-420b-a8cd-be3ce1283226")
+    }
+
     @Test func collectionDecodesFromJSON() throws {
         let json = """
         {

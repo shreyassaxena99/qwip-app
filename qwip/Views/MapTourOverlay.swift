@@ -21,6 +21,8 @@ struct MapTourOverlay: View {
         noiseMatrix: nil,
         rating: 4.8,
         isOpenNow: true,
+        isInUse: nil,
+        podId: nil,
         coverPhoto: nil
     )
 
@@ -189,7 +191,7 @@ struct MapTourOverlay: View {
 
                 // Stats row
                 HStack(spacing: 0) {
-                    previewStatChip(icon: "ic_star", iconColor: .orange, value: spot.formattedRating, label: "RATING")
+                    previewStatChip(icon: "ic_star", iconColor: Color.brandTerracotta, value: spot.formattedRating, label: "RATING")
                     if let noise = spot.noiseMatrix?.currentLevel() {
                         previewDivider()
                         previewStatChip(icon: noise.iconName, iconColor: Color.brandPrimary, value: noise.displayName, label: "USUALLY")

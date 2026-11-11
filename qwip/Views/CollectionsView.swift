@@ -13,6 +13,7 @@ struct CollectionsView: View {
     @State private var actionError: String? = nil
 
     private enum CollectionDestination: Hashable {
+        case favourites
         case collection(Collection)
     }
 
@@ -24,50 +25,13 @@ struct CollectionsView: View {
                 } else if let error = collectionService.loadError ?? savedSpotService.loadError {
                     errorView(message: error)
                 } else {
-                    List {
-                        // Default collection (Favourite Spots) — pinned first, no swipe actions
-                        if let defaultCollection = collectionService.collections.first(where: { $0.isDefault }) {
-                            NavigationLink(value: CollectionDestination.collection(defaultCollection)) {
-                                CollectionRow(name: defaultCollection.name, icon: "star.fill",
-                                              count: savedSpotService.savedEntries.count)
-                            }
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(.init(top: 4, leading: 16, bottom: 4, trailing: 16))
-                        }
-
-                        // Custom collections
-                        ForEach(collectionService.collections.filter { !$0.isDefault }) { collection in
-                            NavigationLink(value: CollectionDestination.collection(collection)) {
-                                CollectionRow(name: collection.name, icon: "folder.fill",
-                                              count: collection.spotCount,
-                                              isShareable: collection.isShareable,
-                                              description: collection.collectionDescription)
-                            }
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                            .listRowInsets(.init(top: 4, leading: 16, bottom: 4, trailing: 16))
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    deleteTarget = collection
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                                Button {
-                                    editTarget = collection
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
-                                .tint(.gray)
-                            }
-                        }
-                    }
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
+                    collectionsList
                 }
             }
             .navigationDestination(for: CollectionDestination.self) { destination in
                 switch destination {
+                case .favourites:
+                    CollectionDetailView(source: .favourites)
                 case .collection(let collection):
                     CollectionDetailView(source: .collection(collection))
                 }
@@ -139,16 +103,50 @@ struct CollectionsView: View {
             } message: {
                 Text("Spots will stay saved.")
             }
-            // General action error
-            .alert("Error", isPresented: Binding(
-                get: { actionError != nil },
-                set: { if !$0 { actionError = nil } }
-            )) {
-                Button("OK") { actionError = nil }
-            } message: {
-                Text(actionError ?? "")
+        }
+        .alert("Error", isPresented: Binding(
+            get: { actionError != nil },
+            set: { if !$0 { actionError = nil } }
+        )) {
+            Button("OK") { actionError = nil }
+        } message: {
+            Text(actionError ?? "")
+        }
+    }
+
+    private var collectionsList: some View {
+        List {
+            NavigationLink(value: CollectionDestination.favourites) {
+                CollectionRow(name: "Favourite Spots", icon: "star.fill",
+                              count: savedSpotService.savedEntries.filter { $0.collectionIds.isEmpty }.count)
+            }
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(.init(top: 4, leading: 16, bottom: 4, trailing: 16))
+
+            ForEach(collectionService.collections) { collection in
+                NavigationLink(value: CollectionDestination.collection(collection)) {
+                    CollectionRow(name: collection.name, icon: "folder.fill",
+                                  count: collection.spotCount,
+                                  isShareable: collection.isShareable,
+                                  description: collection.collectionDescription)
+                }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(.init(top: 4, leading: 16, bottom: 4, trailing: 16))
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) { deleteTarget = collection } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                    Button { editTarget = collection } label: {
+                        Label("Edit", systemImage: "pencil")
+                    }
+                    .tint(.gray)
+                }
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
     }
 
     // MARK: - Deep link handling

@@ -91,3 +91,10 @@ Session is restored on launch via `restoreSession()` + `authStateChanges` stream
 
 - [`supabase-swift`](https://github.com/supabase/supabase-swift) — auth, session, Keychain storage
 - [`GoogleSignIn-iOS`](https://github.com/google/GoogleSignIn-iOS) — Google OAuth
+- [`stripe-ios-spm`](https://github.com/stripe/stripe-ios-spm) — native card checkout for pod reservations
+
+## Pod reservations
+
+The Pods tab and the map load bookable pods from qwipsvc. Signed-in users use `GET /api/app-reservations/pods`, which includes the 50p/hour Test Pod; signed-out users see the public catalogue without it. Westfield remains £15/hour in both the app and website. The map resolves each pod's address with MapKit and shows an orange pod marker; tapping it opens the reservation screen. Booking uses the existing availability, hold creation, and status endpoints. Stripe PaymentSheet confirms the server-created PaymentIntent; only the qwipsvc webhook marks a reservation paid and sends the access code by email. The authenticated booking owner can also fetch the code on booking details until the scheduled end; the app never receives a Stripe secret key. A check-in photo can be taken from 15 minutes before start until the scheduled end and is stored privately by qwipsvc.
+
+Deploy the new public pod-list endpoint in qwipsvc before shipping the app update. The app uses the same live Stripe account as the website. For a test checkout, use matching Stripe test keys and a test-mode qwipsvc environment.

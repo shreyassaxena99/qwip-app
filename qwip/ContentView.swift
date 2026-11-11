@@ -34,6 +34,9 @@ struct ContentView: View {
             Tab("Saved", systemImage: "heart.fill", value: 1) {
                 CollectionsView()
             }
+            Tab("Pods", image: "ic_pod_door", value: 4) {
+                PodReservationView()
+            }
             Tab("Profile", systemImage: "person.fill", value: 2) {
                 ProfileView()
             }
@@ -64,6 +67,12 @@ struct ContentView: View {
         }
         .onChange(of: appRouter.pendingCollectionId) { _, id in
             if id != nil { selectedTab = 1 }
+        }
+        .onAppear {
+            if appRouter.pendingBookingId != nil { selectedTab = 4 }
+        }
+        .onChange(of: appRouter.pendingBookingId) { _, id in
+            if id != nil { selectedTab = 4 }
         }
         .fullScreenCover(isPresented: Binding(
             get: { appRouter.pendingSharedCollectionId != nil },

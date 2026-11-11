@@ -2,6 +2,8 @@ import SwiftUI
 import CoreText
 import GoogleSignIn
 import PostHog
+import StripePaymentSheet
+import UserNotifications
 
 @main
 struct qwipApp: App {
@@ -10,6 +12,8 @@ struct qwipApp: App {
     @State private var appRouter = AppRouter()
 
     init() {
+        UNUserNotificationCenter.current().delegate = ReservationNotificationHandler.shared
+        STPAPIClient.shared.publishableKey = Config.stripePublishableKey
         // PostHog setup — start opted-out until user decides
         let postHogConfig = PostHogConfig(
             apiKey: Config.postHogAPIKey,
@@ -76,10 +80,13 @@ struct qwipApp: App {
                 .environment(authService)
                 .environment(appRouter)
                 .task {
+                    ReservationNotificationHandler.shared.connect(to: appRouter)
                     await authService.restoreSession()
                 }
                 .onOpenURL { url in
-                    if url.scheme?.hasPrefix("com.googleusercontent.apps") == true {
+                    if StripeAPI.handleURLCallback(with: url) {
+                        return
+                    } else if url.scheme?.hasPrefix("com.googleusercontent.apps") == true {
                         GIDSignIn.sharedInstance.handle(url)
                     } else if let id = AppRouter.collectionId(from: url) {
                         appRouter.pendingCollectionId = id

@@ -12,6 +12,7 @@
 		553410342F6578120087C034 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 553410332F6578120087C034 /* GoogleSignInSwift */; };
 		5534103B2F657B1F0087C034 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = 5534103A2F657B1F0087C034 /* Supabase */; };
 		55F1BC312F7AEECD0006C344 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 55F1BC302F7AEECD0006C344 /* PostHog */; };
+		A7B0C0012F7AEECD0006C344 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = A7B0C0022F7AEECD0006C344 /* StripePaymentSheet */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -83,6 +84,7 @@
 				553410342F6578120087C034 /* GoogleSignInSwift in Frameworks */,
 				5534103B2F657B1F0087C034 /* Supabase in Frameworks */,
 				55F1BC312F7AEECD0006C344 /* PostHog in Frameworks */,
+				A7B0C0012F7AEECD0006C344 /* StripePaymentSheet in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -158,6 +160,7 @@
 				553410332F6578120087C034 /* GoogleSignInSwift */,
 				5534103A2F657B1F0087C034 /* Supabase */,
 				55F1BC302F7AEECD0006C344 /* PostHog */,
+				A7B0C0022F7AEECD0006C344 /* StripePaymentSheet */,
 			);
 			productName = qwip;
 			productReference = 55226CA32F50CEBB003873C2 /* qwip.app */;
@@ -245,6 +248,7 @@
 				5534102F2F6577EB0087C034 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				553410302F6578120087C034 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				55F1BC2F2F7AEECD0006C344 /* XCRemoteSwiftPackageReference "posthog-ios" */,
+				A7B0C0032F7AEECD0006C344 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 55226CA42F50CEBB003873C2 /* Products */;
@@ -447,24 +451,26 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = qwip/qwipDebug.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = XV9269Z98G;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = qwip/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "qwip uses your camera to photograph the pod at check-in and to scan a payment card if you choose.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "qwip uses your location to show nearby work-friendly spots.";
 				INFOPLIST_KEY_UIAppFonts = "FunnelDisplay-Regular.ttf FunnelDisplay-Bold.ttf CormorantGaramond-Italic.ttf CormorantGaramond-LightItalic.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UIStatusBarHidden = NO;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.qwipuk.qwip;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -485,24 +491,26 @@
 				CODE_SIGN_ENTITLEMENTS = qwip/qwip.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = XV9269Z98G;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = qwip/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "qwip uses your camera to photograph the pod at check-in and to scan a payment card if you choose.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "qwip uses your location to show nearby work-friendly spots.";
 				INFOPLIST_KEY_UIAppFonts = "FunnelDisplay-Regular.ttf FunnelDisplay-Bold.ttf CormorantGaramond-Italic.ttf CormorantGaramond-LightItalic.ttf";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UIStatusBarHidden = NO;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.qwipuk.qwip;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -662,6 +670,14 @@
 				minimumVersion = 3.48.3;
 			};
 		};
+		A7B0C0032F7AEECD0006C344 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stripe/stripe-ios-spm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 26.14.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -684,6 +700,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 55F1BC2F2F7AEECD0006C344 /* XCRemoteSwiftPackageReference "posthog-ios" */;
 			productName = PostHog;
+		};
+		A7B0C0022F7AEECD0006C344 /* StripePaymentSheet */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A7B0C0032F7AEECD0006C344 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */;
+			productName = StripePaymentSheet;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

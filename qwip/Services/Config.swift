@@ -6,4 +6,5 @@ enum Config {
   static let googleIOSClientID = "143061230778-edvdklcgd6mm88sj31bb2o27sgmpm896.apps.googleusercontent.com"
   static let googleWebClientID = "143061230778-9h8ujnf4r7uqpiqlk4tnb6hulb01so8o.apps.googleusercontent.com"
   static let postHogAPIKey = "phc_5UGgBJk9xrQk9aAWJV3fKgSR2To97URpPixjqt4IfBn"
+  static let stripePublishableKey = "pk_live_51Qnm0jDlkio8pUGzsgPanjgIMU5dQSlq8K0AYJc5Bh9tGXxPxpEb2n1C1yl6TSXbuRuo8eB1SpwSrJrZADOBn0Ia00VoQ4xp7U"
 }

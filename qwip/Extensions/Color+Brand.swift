@@ -10,11 +10,13 @@ import SwiftUI
 // brandBorder    (#C8D8D0) = borders and dividers     — hsl(158, 20%, 85%)
 // brandMuted     (#E6E5E0) = muted fills (pills, badges, tracks) — hsl(60, 10%, 90%)
 // brandMutedText (#527A6B) = secondary/muted text     — hsl(158, 20%, 40%)
+// brandTerracotta (#E37B5F) = secondary accent        — hsl(13, 70%, 63%)
 extension Color {
     static let brandSurface   = Color(hex: "FAFAF5")
     static let brandBorder    = Color(hex: "C8D8D0")
     static let brandMuted     = Color(hex: "E6E5E0")
     static let brandMutedText = Color(hex: "527A6B")
+    static let brandTerracotta = Color(hex: "E37B5F")
 }
 
 // MARK: - Sign-out environment action

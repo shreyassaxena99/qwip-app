@@ -10,6 +10,7 @@ enum SpotCategory: String, CaseIterable, Codable, Identifiable {
     case hotelLobby = "hotel_lobby"
     case library = "library"
     case restaurant = "restaurant"
+    case pod = "pod"
     case other = "other"
 
     var id: String { rawValue }
@@ -22,6 +23,7 @@ enum SpotCategory: String, CaseIterable, Codable, Identifiable {
         case .hotelLobby: return "Hotel"
         case .library: return "Library"
         case .restaurant: return "Restaurant"
+        case .pod: return "Pod"
         case .other: return "Other"
         }
     }
@@ -34,6 +36,7 @@ enum SpotCategory: String, CaseIterable, Codable, Identifiable {
         case .hotelLobby: return "ic_hotel"
         case .library: return "ic_book_open"
         case .restaurant: return "ic_utensils"
+        case .pod: return "ic_pod_door"
         case .other: return "ic_map_pin"
         }
     }
@@ -155,12 +158,14 @@ struct SpotPin: Identifiable, Codable, Equatable {
     let noiseMatrix: NoiseMatrix?
     let rating: Double?
     let isOpenNow: Bool?
+    let isInUse: Bool?
+    let podId: String?
     let coverPhoto: String?
 
     enum CodingKeys: String, CodingKey {
         case id, name, shortAddress, latitude, longitude
         case category, accessType, wifiAvailable, powerOutlets
-        case noiseMatrix, rating, isOpenNow, coverPhoto
+        case noiseMatrix, rating, isOpenNow, isInUse, podId, coverPhoto
     }
 
     var coordinate: CLLocationCoordinate2D {
@@ -190,6 +195,8 @@ struct SpotDetail: Identifiable, Codable {
     let noiseMatrix: NoiseMatrix?
     let rating: Double?
     let isOpenNow: Bool?
+    let isInUse: Bool?
+    let podId: String?
     let coverPhoto: String?
 
     // Detail-only
@@ -211,7 +218,7 @@ struct SpotDetail: Identifiable, Codable {
     enum CodingKeys: String, CodingKey {
         case id, name, shortAddress, latitude, longitude
         case category, accessType, wifiAvailable, powerOutlets
-        case rating, isOpenNow, coverPhoto
+        case rating, isOpenNow, isInUse, podId, coverPhoto
         case noiseMatrix
         case formattedAddress, phoneNational, googleMapsUri, websiteUri
         case userRatingCount, editorialSummary, businessStatus
@@ -233,6 +240,8 @@ struct SpotDetail: Identifiable, Codable {
         noiseMatrix = try c.decodeIfPresent(NoiseMatrix.self, forKey: .noiseMatrix)
         rating = try c.decodeIfPresent(Double.self, forKey: .rating)
         isOpenNow = try c.decodeIfPresent(Bool.self, forKey: .isOpenNow)
+        isInUse = try c.decodeIfPresent(Bool.self, forKey: .isInUse)
+        podId = try c.decodeIfPresent(String.self, forKey: .podId)
         coverPhoto = try c.decodeIfPresent(String.self, forKey: .coverPhoto)
         formattedAddress = try c.decodeIfPresent(String.self, forKey: .formattedAddress)
         phoneNational = try c.decodeIfPresent(String.self, forKey: .phoneNational)
@@ -273,6 +282,8 @@ struct SpotDetail: Identifiable, Codable {
             noiseMatrix: noiseMatrix,
             rating: rating,
             isOpenNow: isOpenNow,
+            isInUse: isInUse,
+            podId: podId,
             coverPhoto: coverPhoto
         )
     }

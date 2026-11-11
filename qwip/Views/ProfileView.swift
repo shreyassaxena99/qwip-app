@@ -45,7 +45,7 @@ private enum ProfileField: Identifiable {
 // MARK: - Navigation destinations
 
 private enum ProfileDestination: Hashable {
-    case aboutYou, preferences, about, myAccount
+    case aboutYou, bookings, preferences, about, myAccount
 }
 
 // MARK: - ProfileView
@@ -80,11 +80,13 @@ struct ProfileView: View {
                     GlassCard {
                         menuRow("Personal Details", icon: "ic_user",       color: Color(hex: "1f3d32"), dest: .aboutYou)
                         Divider().overlay(Color.brandBorder).padding(.leading, 44)
+                        menuRow("My Bookings", icon: "ic_pod_door", color: Color(hex: "1f3d32"), dest: .bookings)
+                        Divider().overlay(Color.brandBorder).padding(.leading, 44)
                         menuRow("Preferences",     icon: "ic_settings",  color: Color(hex: "5E6AD2"), dest: .preferences)
                         Divider().overlay(Color.brandBorder).padding(.leading, 44)
                         menuRow("About",            icon: "ic_info",      color: Color(hex: "34C759"), dest: .about)
                         Divider().overlay(Color.brandBorder).padding(.leading, 44)
-                        menuRow("Manage Account",  icon: "ic_circle_user", color: Color(hex: "FF9500"), dest: .myAccount)
+                        menuRow("Manage Account",  icon: "ic_circle_user", color: Color.brandTerracotta, dest: .myAccount)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -96,6 +98,7 @@ struct ProfileView: View {
             .navigationDestination(for: ProfileDestination.self) { dest in
                 switch dest {
                 case .aboutYou:    AboutYouView()
+                case .bookings:    MyBookingsView()
                 case .preferences: PreferencesView()
                 case .about:       AboutAppView()
                 case .myAccount:   MyAccountView()
@@ -500,7 +503,7 @@ private struct MyAccountView: View {
                                     .font(.dmSans(14, weight: .bold))
                                     .foregroundStyle(Color.brandPrimary)
                             } icon: {
-                                GlassIcon(iconName: "ic_log_out", color: Color(hex: "FF9500"))
+                                GlassIcon(iconName: "ic_log_out", color: Color.brandTerracotta)
                             }
                             Spacer()
                             Image("ic_chevron_right")

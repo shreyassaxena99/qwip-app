@@ -4,6 +4,7 @@ import PostHog
 
 struct SpotDetailView: View {
     let detail: SpotDetail
+    var livePodInUse: Bool? = nil
     @Environment(SavedSpotService.self) var savedSpotService
     @Environment(LocationService.self) var locationService
     @Environment(\.dismiss) var dismiss
@@ -193,8 +194,14 @@ struct SpotDetailView: View {
                     .foregroundStyle(Color.brandPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
-                OpenBadge(isOpen: detail.isOpenNow)
-                    .padding(.top, 4)
+                Group {
+                    if detail.category == .pod {
+                        PodOccupancyBadge(inUse: livePodInUse ?? detail.isInUse)
+                    } else {
+                        OpenBadge(isOpen: detail.isOpenNow)
+                    }
+                }
+                .padding(.top, 4)
             }
 
             HStack(spacing: 8) {
@@ -204,7 +211,7 @@ struct SpotDetailView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 11, height: 11)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color.brandTerracotta)
                     Text(detail.formattedRating)
                         .font(.dmSans(14, weight: .heavy))
                         .foregroundStyle(Color.brandPrimary)

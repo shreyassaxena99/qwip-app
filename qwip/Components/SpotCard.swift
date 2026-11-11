@@ -61,7 +61,7 @@ struct SpotCard: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 9, height: 9)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color.brandTerracotta)
                     Text(spot.formattedRating)
                         .font(.dmSans(18, weight: .black))
                         .foregroundStyle(Color.brandPrimary)
@@ -117,7 +117,7 @@ struct SpotRow: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 9, height: 9)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color.brandTerracotta)
                     Text(spot.formattedRating)
                         .font(.dmSans(12, weight: .bold))
                         .foregroundStyle(Color.brandPrimary)
@@ -174,6 +174,25 @@ struct OpenBadge: View {
                         .overlay(Capsule().stroke(fgColor.opacity(0.3), lineWidth: 1))
                 )
         }
+    }
+}
+
+struct PodOccupancyBadge: View {
+    let inUse: Bool?
+
+    var body: some View {
+        let foreground = inUse == nil ? Color(hex: "5C6661")
+            : inUse == true ? Color(hex: "A45716") : Color(hex: "1A7A50")
+        let background = inUse == nil ? Color(hex: "E7EBE8")
+            : inUse == true ? Color(hex: "FFF0D8") : Color(hex: "D4F5E4")
+        Text(inUse == nil ? "STATUS UNAVAILABLE" : inUse == true ? "IN USE" : "AVAILABLE")
+            .font(.dmSans(8, weight: .black))
+            .tracking(0.6)
+            .foregroundStyle(foreground)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(background)
+                .overlay(Capsule().strokeBorder(foreground.opacity(0.3), lineWidth: 1)))
     }
 }
 
@@ -317,7 +336,7 @@ struct SavedSpotCard: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 9, height: 9)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color.brandTerracotta)
                     Text(spot.formattedRating)
                         .font(.dmSans(13, weight: .black))
                         .foregroundStyle(Color.brandPrimary)
